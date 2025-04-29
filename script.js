@@ -1,0 +1,766 @@
+// API Access Key
+const accessKey = "6RrtS8-C4R9NtR1P-1jiWVeagN-8bo6Y0J6Fb7KD05s";
+
+// DOM Elements
+const searchForm = document.getElementById("search-form");
+const searchBox = document.getElementById("search-box");
+const searchResult = document.getElementById("search-result");
+const showMoreBtn = document.getElementById("show-more-btn");
+const loader = document.querySelector(".loader");
+const noResults = document.getElementById("no-results");
+const aiAssistant = document.getElementById("ai-assistant");
+const aiChatPanel = document.getElementById("ai-chat-panel");
+const chatClose = document.getElementById("chat-close");
+const chatMessages = document.getElementById("chat-messages");
+const chatInput = document.getElementById("chat-input-field");
+const chatSend = document.getElementById("chat-send");
+// const searchOptionsToggle = document.getElementById("search-options-toggle");
+// const searchOptions = document.getElementById("search-options");
+// const closeOptions = document.getElementById("close-options");
+const voiceSearch = document.getElementById("voice-search");
+const imageModal = document.getElementById("image-modal");
+const modalClose = document.getElementById("modal-close");
+const modalImage = document.getElementById("modal-image");
+const modalTitle = document.getElementById("modal-title");
+const modalResolution = document.getElementById("modal-resolution");
+const modalAspect = document.getElementById("modal-aspect");
+const categoryPills = document.querySelectorAll(".category-pill");
+// const pillOptions = document.querySelectorAll(".pill-option");
+
+// State Variables
+let keyword = "";
+let page = 1;
+let isListening = false;
+let currentCategories = [];
+
+
+function startCategoryRefresh() {
+  // Fetch immediately on reload
+  fetchCategories();
+  
+  // Then refresh every hour
+  setInterval(fetchCategories, 3600000);
+  
+  // Also fetch when tab becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchCategories();
+    }
+  });
+
+  // Optional: Fetch on window focus
+  window.addEventListener('focus', fetchCategories);
+}
+// Initialize the app
+function init() {
+  // Hide loader and show more button initially
+  loader.style.display = "none";
+  showMoreBtn.style.display = "none";
+  noResults.style.display = "none";
+  
+  // Animate metrics on load
+  animateMetrics();
+  
+  // Initialize neural network visualization
+  initNeuralNetwork();
+  
+  // Initialize particles
+  initParticles();
+  
+  // Add event listeners
+  setupEventListeners();
+
+  fetchCategories();
+  startCategoryRefresh();
+}
+
+// Set up all event listeners
+function setupEventListeners() {
+  searchForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    page = 1;
+    searchImages();
+  });
+  
+  showMoreBtn.addEventListener("click", () => {
+    page++;
+    searchImages();
+  });
+  
+  aiAssistant.addEventListener("click", toggleChatPanel);
+  chatClose.addEventListener("click", toggleChatPanel);
+  
+  chatSend.addEventListener("click", sendChatMessage);
+  chatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendChatMessage();
+  });
+  
+
+  voiceSearch.addEventListener("click", toggleVoiceRecognition);
+  
+  modalClose.addEventListener("click", closeImageModal);
+  
+  categoryPills.forEach(pill => {
+    pill.addEventListener("click", () => {
+      searchBox.value = pill.dataset.category;
+      page = 1;
+      searchImages();
+    });
+  });
+  
+  // Handle image click to open modal
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("result-img")) {
+      openImageModal(e.target);
+    }
+  });
+}
+
+// Search images function
+async function searchImages() {
+  keyword = searchBox.value.trim() || "random";
+  
+  if (page === 1) {
+    searchResult.innerHTML = "";
+    showAISearchAnimation();
+  }
+  
+  loader.style.display = "flex";
+  noResults.style.display = "none";
+  
+  // Construct the search URL - removed content_filter parameter as it's not supported
+  let url = `https://api.unsplash.com/search/photos?page=${page}&query=${keyword}&client_id=${accessKey}&per_page=12`;
+  
+  try {
+    const response = await fetch(url);
+    
+    // If response is not ok, throw an error
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Hide loader after results are fetched
+    loader.style.display = "none";
+    
+    // Check if data and results exist before accessing them
+    if (!data || !data.results) {
+      console.error("Invalid API response:", data);
+      noResults.style.display = "flex";
+      showMoreBtn.style.display = "none";
+      return;
+    }
+    
+    if (data.results.length === 0 && page === 1) {
+      noResults.style.display = "flex";
+      showMoreBtn.style.display = "none";
+      return;
+    }
+    
+    displayImages(data.results);
+    
+    if (data.total_pages > page) {
+      showMoreBtn.style.display = "block";
+    } else {
+      showMoreBtn.style.display = "none";
+    }
+    
+    // Add AI search observation to chat
+    if (page === 1) {
+      setTimeout(() => {
+        addAIMessage(`I found ${data.total} images for "${keyword}". Here are some of the best results.`);
+      }, 1000);
+    }
+    
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    loader.style.display = "none";
+    noResults.style.display = "flex";
+    
+    // Show error in chat
+    addAIMessage("I encountered an error while searching for images. Please try again.");
+  }
+}
+
+// Display images in the grid
+function displayImages(results) {
+  // Ensure results exist and is an array
+  if (!Array.isArray(results)) {
+    console.error("Invalid results:", results);
+    return;
+  }
+  
+  results.forEach(result => {
+    const imageBox = document.createElement("div");
+    imageBox.classList.add("image-box");
+    imageBox.dataset.aiLabels = generateRandomAILabels();
+    
+    // Add a small delay for each image to create a staggered loading effect
+    setTimeout(() => {
+      imageBox.classList.add("loaded");
+    }, Math.random() * 500);
+    
+    const image = document.createElement("img");
+    image.src = result.urls.regular;
+    image.alt = result.alt_description || "Unsplash Image";
+    image.classList.add("result-img");
+    image.dataset.full = result.urls.full;
+    image.dataset.description = result.description || result.alt_description || "Image";
+    image.dataset.width = result.width;
+    image.dataset.height = result.height;
+    
+    const overlay = document.createElement("div");
+    overlay.classList.add("image-overlay");
+    
+    const photographer = document.createElement("div");
+    photographer.classList.add("photographer");
+    photographer.textContent = `📸 ${result.user.name}`;
+    
+    const aiTag = document.createElement("div");
+    aiTag.classList.add("ai-tag");
+    aiTag.innerHTML = `<span class="pulse-dot"></span>AI Enhanced`;
+    
+    overlay.appendChild(photographer);
+    overlay.appendChild(aiTag);
+    
+    imageBox.appendChild(image);
+    imageBox.appendChild(overlay);
+    
+    searchResult.appendChild(imageBox);
+  });
+}
+
+// Toggle chat panel
+function toggleChatPanel() {
+  aiChatPanel.classList.toggle("active");
+  
+  // If opening the panel, scroll to the bottom of messages
+  if (aiChatPanel.classList.contains("active")) {
+    scrollToBottom();
+    
+    // Add welcome message if this is the first time
+    if (chatMessages.children.length <= 1) {
+      setTimeout(() => {
+        addAIMessage("I see you're looking for images. How can I help refine your search?");
+      }, 500);
+    }
+  }
+}
+
+// Send chat message
+function sendChatMessage() {
+  const message = chatInput.value.trim();
+  if (!message) return;
+  
+  // Add user message to chat
+  const userMessageEl = document.createElement("div");
+  userMessageEl.classList.add("message", "user");
+  userMessageEl.innerHTML = `
+    <div class="message-content">
+      <p>${message}</p>
+    </div>
+  `;
+  chatMessages.appendChild(userMessageEl);
+  
+  // Clear input
+  chatInput.value = "";
+  
+  // Scroll to bottom
+  scrollToBottom();
+  
+  // Process message and respond
+  processUserMessage(message);
+}
+
+// Process user message and generate AI response
+function processUserMessage(message) {
+  // Add typing indicator
+  const typingIndicator = document.createElement("div");
+  typingIndicator.classList.add("message", "system", "typing");
+  typingIndicator.innerHTML = `
+    <div class="message-avatar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 9H9.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 9H15.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="message-content">
+      <div class="typing-indicator">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  `;
+  chatMessages.appendChild(typingIndicator);
+  scrollToBottom();
+  
+  // Simulate thinking and then respond
+  setTimeout(() => {
+    // Remove typing indicator
+    chatMessages.removeChild(typingIndicator);
+    
+    // Basic message processing logic
+    let response;
+    message = message.toLowerCase();
+    
+    if (message.includes("search") || message.includes("find") || message.includes("look for")) {
+      const searchTerm = message.replace(/(search for|search|find|look for|images of|pictures of)/gi, "").trim();
+      if (searchTerm) {
+        response = `I'll search for "${searchTerm}" images right away.`;
+        // Populate search box and trigger search
+        searchBox.value = searchTerm;
+        searchImages();
+      } else {
+        response = "What kind of images would you like to search for?";
+      }
+    } else if (message.includes("hello") || message.includes("hi") || message.includes("hey")) {
+      response = "Hello! I'm your AI image search assistant. What kind of images are you looking for today?";
+    } else if (message.includes("thank") || message.includes("thanks")) {
+      response = "You're welcome! Let me know if you need to find any other images.";
+    } else if (message.includes("help") || message.includes("how")) {
+      response = "I can help you search for images. Try asking me to 'find images of mountains' or 'search for cute animals'. You can also use the search bar directly or browse trending categories.";
+    } else if (message.includes("feature") || message.includes("can you")) {
+      response = "I can search for images, analyze visual content, process natural language queries, and help you discover new visual content based on your preferences.";
+    } else {
+      // Assume it's a search query
+      response = `I'll look for images related to "${message}".`;
+      // Populate search box and trigger search
+      searchBox.value = message;
+      searchImages();
+    }
+    
+    // Add AI response
+    addAIMessage(response);
+  }, 1000 + Math.random() * 1000); // Random delay to simulate thinking
+}
+
+// Add AI message to chat
+function addAIMessage(message) {
+  const aiMessageEl = document.createElement("div");
+  aiMessageEl.classList.add("message", "system");
+  aiMessageEl.innerHTML = `
+    <div class="message-avatar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 9H9.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 9H15.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="message-content">
+      <p>${message}</p>
+    </div>
+  `;
+  chatMessages.appendChild(aiMessageEl);
+  scrollToBottom();
+}
+
+// Scroll chat to bottom
+function scrollToBottom() {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Toggle search options panel
+// function toggleSearchOptions() {
+//   searchOptions.classList.toggle("active");
+// }
+
+// Toggle voice recognition
+function toggleVoiceRecognition() {
+  if (!isListening) {
+    // Check if browser supports speech recognition
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      
+      // Show voice waves
+      document.querySelector('.voice-waves').classList.add('active');
+      document.querySelector('.search-animation').textContent = "Listening...";
+      document.querySelector('.search-animation').classList.add('listening');
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        searchBox.value = transcript;
+        // Hide voice waves
+        document.querySelector('.voice-waves').classList.remove('active');
+        document.querySelector('.search-animation').textContent = "Neural Processing...";
+        document.querySelector('.search-animation').classList.remove('listening');
+        
+        // Trigger search
+        page = 1;
+        searchImages();
+      };
+      
+      recognition.onend = () => {
+        // Hide voice waves
+        document.querySelector('.voice-waves').classList.remove('active');
+        document.querySelector('.search-animation').textContent = "Neural Processing...";
+        document.querySelector('.search-animation').classList.remove('listening');
+        isListening = false;
+      };
+      
+      recognition.start();
+      isListening = true;
+    } else {
+      alert("Speech recognition is not supported in your browser.");
+    }
+  } else {
+    // Already listening - implementation would need to stop the recognition
+    document.querySelector('.voice-waves').classList.remove('active');
+    document.querySelector('.search-animation').textContent = "Neural Processing...";
+    document.querySelector('.search-animation').classList.remove('listening');
+    isListening = false;
+  }
+}
+
+// Show AI search animation
+function showAISearchAnimation() {
+  const pulseElement = document.querySelector('.pulse');
+  const searchAnimationElement = document.querySelector('.search-animation');
+  
+  if (pulseElement) pulseElement.classList.add('active');
+  if (searchAnimationElement) searchAnimationElement.style.opacity = 1;
+  
+  setTimeout(() => {
+    if (pulseElement) pulseElement.classList.remove('active');
+    if (searchAnimationElement) searchAnimationElement.style.opacity = 0;
+  }, 3000);
+}
+
+// Open image modal
+async function openImageModal(image) {
+  modalImage.src = image.src;
+  modalTitle.textContent = image.dataset.description;
+  modalResolution.textContent = `${image.dataset.width} × ${image.dataset.height}`;
+  
+  // Calculate aspect ratio
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const divisor = gcd(image.dataset.width, image.dataset.height);
+  const aspectW = image.dataset.width / divisor;
+  const aspectH = image.dataset.height / divisor;
+  modalAspect.textContent = `${aspectW}:${aspectH}`;
+  
+  // Create and show the loader
+  const colorPalette = document.querySelector('.color-palette');
+  colorPalette.innerHTML = '';
+  
+  const analysisLoader = document.createElement('div');
+  analysisLoader.classList.add('color-analysis-loader');
+  analysisLoader.innerHTML = `
+    
+    <div class="loader-text">AI Analyzing Colors...</div>
+  `;
+  colorPalette.appendChild(analysisLoader);
+  
+  // Create an off-screen canvas to analyze the image
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  
+  img.crossOrigin = "Anonymous";
+  img.src = image.src;
+  
+  img.onload = () => {
+    // Add artificial delay for loader visualization
+    setTimeout(() => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const colorMap = new Map();
+      
+      // Remove loader
+      colorPalette.removeChild(analysisLoader);
+      
+      // Analyze pixels with better sampling
+      for (let i = 0; i < imageData.length; i += 4) {
+        const r = Math.floor(imageData[i] / 32) * 32;
+        const g = Math.floor(imageData[i + 1] / 32) * 32;
+        const b = Math.floor(imageData[i + 2] / 32) * 32;
+        const a = imageData[i + 3];
+        
+        if (a < 128) continue;
+        
+        const rgb = `rgb(${r},${g},${b})`;
+        colorMap.set(rgb, (colorMap.get(rgb) || 0) + 1);
+      }
+      
+      // Convert to array and sort by frequency
+      const sortedColors = Array.from(colorMap.entries())
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .map(([color]) => color);
+
+        console.log("Sorted Colors:", sortedColors);
+        
+      
+      // Update color palette
+      sortedColors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.classList.add('color-swatch');
+        swatch.style.backgroundColor = color;
+        
+        swatch.title = color;
+        
+        const percentage = ((colorMap.get(color) / (canvas.width * canvas.height)) * 100).toFixed(1);
+        const label = document.createElement('span');
+        label.classList.add('color-percentage');
+        label.textContent = `${percentage}%`;
+        swatch.appendChild(label);
+        
+        colorPalette.appendChild(swatch);
+      });
+    }, 1500); // 1.5 second delay for loader animation
+  };
+  
+  // Show modal
+  imageModal.classList.add('active');
+  document.body.classList.add('modal-open');
+}
+
+// Close image modal
+function closeImageModal() {
+  imageModal.classList.remove('active');
+  document.body.classList.remove('modal-open');
+}
+
+// Generate random color
+function generateRandomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+// Generate random AI labels for images
+function generateRandomAILabels() {
+  const labels = [
+    "Portrait", "Landscape", "Abstract", "Architecture", "Nature",
+    "Urban", "Wildlife", "Macro", "Street", "Minimal", "Vintage",
+    "Conceptual", "Documentary", "Fine Art", "Black and White"
+  ];
+  
+  const confidences = [
+    "99.8%", "98.2%", "97.1%", "95.6%", "94.3%", "93.7%", "92.2%", "91.5%"
+  ];
+  
+  // Select 2-3 random labels
+  const numLabels = Math.floor(Math.random() * 2) + 2;
+  const selectedLabels = [];
+  
+  for (let i = 0; i < numLabels; i++) {
+    const randomIndex = Math.floor(Math.random() * labels.length);
+    selectedLabels.push({
+      name: labels[randomIndex],
+      confidence: confidences[Math.floor(Math.random() * confidences.length)]
+    });
+    // Remove the selected label to avoid duplicates
+    labels.splice(randomIndex, 1);
+  }
+  
+  return JSON.stringify(selectedLabels);
+}
+
+// Animate metrics on page load
+function animateMetrics() {
+  const metricProgress = document.querySelectorAll('.metric-progress');
+  metricProgress.forEach((circle, index) => {
+    const offset = circle.getAttribute('stroke-dashoffset');
+    
+    // Animate from full circle to the target offset
+    circle.style.strokeDashoffset = "339.29";
+    setTimeout(() => {
+      circle.style.transition = "stroke-dashoffset 1.5s ease-in-out";
+      circle.style.strokeDashoffset = offset || "0";
+    }, 300 + (index * 200));
+  });
+}
+
+// Initialize neural network visualization
+function initNeuralNetwork() {
+  const neuralNetwork = document.getElementById('neural-network');
+  if (!neuralNetwork) return;
+  
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  
+  // Create nodes and connections
+  const numNodes = Math.floor(width * height / 20000); // Adjust density
+  const nodes = [];
+  
+  for (let i = 0; i < numNodes; i++) {
+    const node = document.createElement('div');
+    node.classList.add('neural-node');
+    node.style.left = `${Math.random() * 100}%`;
+    node.style.top = `${Math.random() * 100}%`;
+    node.style.animationDelay = `${Math.random() * 5}s`;
+    node.style.animationDuration = `${3 + Math.random() * 7}s`;
+    
+    neuralNetwork.appendChild(node);
+    nodes.push(node);
+    
+    // Create connections between some nodes
+    if (i > 0 && Math.random() > 0.7) {
+      const connectionCount = Math.floor(Math.random() * 3) + 1;
+      
+      for (let j = 0; j < connectionCount; j++) {
+        const targetIndex = Math.floor(Math.random() * i);
+        const connection = document.createElement('div');
+        connection.classList.add('neural-connection');
+        
+        // Position and rotate connection
+        const x1 = parseFloat(node.style.left);
+        const y1 = parseFloat(node.style.top);
+        const x2 = parseFloat(nodes[targetIndex].style.left);
+        const y2 = parseFloat(nodes[targetIndex].style.top);
+        
+        const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+        
+        connection.style.width = `${distance}%`;
+        connection.style.left = `${x1}%`;
+        connection.style.top = `${y1}%`;
+        connection.style.transform = `rotate(${angle}deg)`;
+        connection.style.transformOrigin = 'left center';
+        connection.style.opacity = Math.random() * 0.2 + 0.1;
+        connection.style.animationDelay = `${Math.random() * 5}s`;
+        connection.style.animationDuration = `${1 + Math.random() * 3}s`;
+        
+        neuralNetwork.appendChild(connection);
+      }
+    }
+  }
+}
+
+// Initialize particles
+function initParticles() {
+  const particles = document.getElementById('particles');
+  if (!particles) return;
+  
+  const numParticles = 30;
+  
+  for (let i = 0; i < numParticles; i++) {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    
+    // Random size
+    const size = Math.random() * 8 + 2;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    
+    // Random position
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    
+    // Random animation
+    particle.style.animationDuration = `${10 + Math.random() * 20}s`;
+    particle.style.animationDelay = `${Math.random() * 5}s`;
+    
+    particles.appendChild(particle);
+  }
+}
+
+async function fetchCategories() {
+  try {
+    // Fetch topics from Unsplash API
+    const response = await fetch(`https://api.unsplash.com/topics?client_id=${accessKey}&per_page=5`);
+    const data = await response.json();
+    
+    // Map the API response to our category format
+    currentCategories = data.map(topic => ({
+      name: topic.slug,
+      icon: getTopicIcon(topic.slug), // Helper function to get emoji
+      label: topic.title
+    }));
+    
+    // Update the UI
+    renderCategories();
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+  }
+}
+
+// Helper function to map topics to emojis
+function getTopicIcon(topic) {
+  const iconMap = {
+    // Nature & Environment
+    nature: '🌿', forest: '🌳', landscape: '🏞️', wildlife: '🦁', ocean: '🌊',
+    mountain: '⛰️', beach: '🏖️', sunset: '🌅', flower: '🌸', garden: '🌺',
+    
+    // Architecture & Places
+    architecture: '🏙️', building: '🏢', city: '🌆', monument: '🗽', interior: '🏰',
+    house: '🏠', bridge: '🌉', street: '🛣️', park: '🌳', museum: '🏛️',
+    
+    // People & Lifestyle
+    people: '👥', portrait: '👤', family: '👨‍👩‍👧‍👦', fashion: '👗', lifestyle: '🌟',
+    sports: '⚽', fitness: '💪', dance: '💃', yoga: '🧘', wedding: '💒',
+    
+    // Technology & Science
+    technology: '💻', computer: '🖥️', mobile: '📱', robot: '🤖', space: '🌌',
+    science: '🔬', innovation: '💡', data: '📊', network: '🌐', digital: '⌨️',
+    
+    // Art & Entertainment
+    art: '🎨', music: '🎵', film: '🎬', photography: '📸', design: '✏️',
+    painting: '🖼️', theater: '🎭', concert: '🎤', book: '📚', game: '🎮',
+    
+    // Food & Drink
+    food: '🍳', drink: '🥤', restaurant: '🍽️', cooking: '👨‍🍳', coffee: '☕',
+    dessert: '🍰', fruit: '🍎', vegetable: '🥦', wine: '🍷', cocktail: '🍸',
+    
+    // Business & Work
+    business: '💼', office: '🏢', meeting: '👥', startup: '🚀', finance: '💰',
+    chart: '📈', success: '🏆', growth: '📊', teamwork: '🤝', creative: '💡',
+    
+    // Travel & Transport
+    travel: '✈️', adventure: '🗺️', vacation: '🌴', hotel: '🏨', camping: '⛺',
+    car: '🚗', train: '🚂', bike: '🚲', boat: '⛵', map: '🗺️',
+    
+    // Abstract & Concepts
+    minimal: '⬜', pattern: '🔷', texture: '📱', concept: '💭', idea: '💡',
+    modern: '🔲', vintage: '📷', classic: '🏛️', abstract: '🎨', geometric: '📐'
+  };
+
+  // Multiple default icons for better variety
+  const defaultIcons = ['📸', '🎆', '🖼️', '📷', '🌄', '✨', '🎨', '📱'];
+  
+  // Return mapped icon or random default
+  return iconMap[topic.toLowerCase()] || 
+         defaultIcons[Math.floor(Math.random() * defaultIcons.length)];
+}
+
+
+
+// Add this function to render categories
+function renderCategories() {
+  const categoryContainer = document.querySelector('.category-pills');
+  if (!categoryContainer) return;
+  
+  categoryContainer.innerHTML = currentCategories
+    .map(cat => `
+      <button class="category-pill" data-category="${cat.name}">
+        <span class="category-icon">${cat.icon}</span>${cat.label}
+      </button>
+    `).join('');
+    
+  // Add click handlers
+  document.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      searchBox.value = pill.dataset.category;
+      page = 1;
+      searchImages();
+    });
+  });
+}
+
+// Initialize the app when DOM is fully loaded
+document.addEventListener("DOMContentLoaded", init);
