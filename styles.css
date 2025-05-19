@@ -596,7 +596,7 @@ h1 {
     line-height: 1.5;
 }
 
-/* AI Metrics */
+/* Enhanced AI Metrics */
 .ai-metrics {
     display: flex;
     justify-content: center;
@@ -607,7 +607,19 @@ h1 {
 
 .metric-card {
     text-align: center;
-    padding: 10px;
+    padding: 15px;
+    padding-bottom: 30px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    width: 160px;
+    cursor: pointer;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    background-color: rgba(0, 229, 255, 0.05);
+    box-shadow: var(--glow-effect);
 }
 
 .metric-ring {
@@ -621,11 +633,13 @@ h1 {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
+    filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.4));
 }
 
 .metric-ring circle {
     fill: none;
     stroke-width: 12;
+    transition: stroke-dashoffset 1.5s ease-in-out, stroke 0.3s ease;
 }
 
 .metric-bg {
@@ -634,8 +648,12 @@ h1 {
 
 .metric-progress {
     stroke: var(--secondary-color);
-    transition: stroke-dashoffset 1s ease;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
     stroke-dasharray: 339.29;
+}
+
+.metric-card:hover .metric-progress {
+    stroke: var(--accent-color);
 }
 
 .metric-value {
@@ -646,11 +664,65 @@ h1 {
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover .metric-value {
+    color: var(--accent-color);
+    transform: translate(-50%, -50%) scale(1.05);
+    text-shadow: 0 0 8px rgba(255, 0, 200, 0.5);
 }
 
 .metric-label {
     font-size: 1rem;
     color: rgba(224, 230, 255, 0.8);
+    margin-bottom: 6px;
+}
+
+.metric-description {
+    font-size: 0.8rem;
+    color: rgba(224, 230, 255, 0.6);
+    max-width: 140px;
+    margin: 0 auto;
+    height: 32px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover .metric-description {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pulse-ring {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    border: 2px solid var(--secondary-color);
+    opacity: 0;
+}
+
+.metric-card:hover .pulse-ring {
+    animation: pulse-metric 2s infinite;
+}
+
+@keyframes pulse-metric {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    70% {
+        transform: scale(1.1);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.1);
+        opacity: 0;
+    }
 }
 
 /* Image Categories */
@@ -2210,7 +2282,9 @@ h1 {
 /* Large devices (less than 992px) */
 @media (max-width: 991px) {
     .ai-features {
-        display: flex; justify-content: center; align-items: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 40px;
     }
 
@@ -2242,7 +2316,9 @@ h1 {
 /* Medium devices (less than 768px) */
 @media (max-width: 767px) {
     .ai-features {
-        display: flex; justify-content: center; align-items: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 35px;
     }
 
@@ -2275,7 +2351,9 @@ h1 {
 /* Small devices (less than 576px) */
 @media (max-width: 575px) {
     .ai-features {
-        display: flex; justify-content: center; align-items: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 30px;
     }
 
