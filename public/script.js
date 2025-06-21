@@ -647,22 +647,31 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
   }
 }
 
-// Function to display enhanced analysis with better styling
+// Enhanced function to display analysis with better color handling
 function displayEnhancedAnalysis(analysis, container) {
-  // Create color palette HTML with improved styling
-  const colorPaletteHTML = analysis.colorPalette ? analysis.colorPalette.map(color => `
-    <div class="enhanced-color-swatch" style="background-color: ${color.hex};" title="${color.hex} (${color.percentage})">
-      <div class="color-info">
-        <div class="color-hex">${color.hex}</div>
-        <div class="color-percent">${color.percentage}</div>
-      </div>
-    </div>
-  `).join('') : '';
+  console.log('Analysis data:', analysis); // Debug log to see what we're getting
+  
+  // Create color palette HTML with improved styling and error handling
+  const colorPaletteHTML = analysis.colorPalette && Array.isArray(analysis.colorPalette) 
+    ? analysis.colorPalette.map(color => `
+        <div class="enhanced-color-swatch" 
+             style="background-color: ${color.hex};" 
+             title="${color.hex} (${color.percentage})"
+             onclick="copyColorToClipboard('${color.hex}')">
+          <div class="color-info">
+            <div class="color-hex">${color.hex}</div>
+            <div class="color-percent">${color.percentage}</div>
+          </div>
+        </div>
+      `).join('') 
+    : generateDefaultColorPalette(); // Fallback if no colors
 
   // Create tags HTML with improved styling
-  const tagsHTML = analysis.tags ? analysis.tags.map(tag => `
-    <span class="enhanced-ai-tag">${tag}</span>
-  `).join('') : '';
+  const tagsHTML = analysis.tags && Array.isArray(analysis.tags) 
+    ? analysis.tags.map(tag => `
+        <span class="enhanced-ai-tag" onclick="searchByTag('${tag}')">${tag}</span>
+      `).join('') 
+    : '<span class="enhanced-ai-tag">visual</span><span class="enhanced-ai-tag">creative</span>';
 
   container.innerHTML = `
     <div class="enhanced-analysis-container">
@@ -673,7 +682,7 @@ function displayEnhancedAnalysis(analysis, container) {
           <span class="section-icon">🖼️</span>
           <h5 class="section-title">Visual Description</h5>
         </div>
-        <p class="analysis-text">${analysis.description || 'A beautiful and detailed image.'}</p>
+        <p class="analysis-text">${analysis.description || 'A beautiful and detailed image with rich visual elements.'}</p>
       </div>
 
       <!-- Tags -->
@@ -693,7 +702,7 @@ function displayEnhancedAnalysis(analysis, container) {
           <span class="section-icon">🎭</span>
           <h5 class="section-title">Mood & Atmosphere</h5>
         </div>
-        <p class="analysis-text">${analysis.mood || 'A captivating atmosphere with rich emotional depth.'}</p>
+        <p class="analysis-text">${analysis.mood || 'A captivating atmosphere with rich emotional depth and visual harmony.'}</p>
       </div>
 
       <!-- Color Palette -->
@@ -701,18 +710,19 @@ function displayEnhancedAnalysis(analysis, container) {
         <div class="section-header">
           <span class="section-icon">🎨</span>
           <h5 class="section-title">Color Palette</h5>
+          <small style="opacity: 0.7; font-size: 0.75rem;">Click colors to copy hex codes</small>
         </div>
         <div class="enhanced-color-palette">
           ${colorPaletteHTML}
         </div>
       </div>
 
-      <!-- Additional Analysis -->
+      <!-- Additional Analysis Sections -->
       ${analysis.composition ? `
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">📐</span>
-          <h5 class="section-title">Composition</h5>
+          <h5 class="section-title">Composition Analysis</h5>
         </div>
         <p class="analysis-text">${analysis.composition}</p>
       </div>
@@ -751,6 +761,157 @@ function displayEnhancedAnalysis(analysis, container) {
     </div>
   `;
 }
+
+// Add these new helper functions for enhanced color functionality
+
+// Generate default color palette if AI analysis doesn't provide one
+function generateDefaultColorPalette() {
+  const defaultColors = [
+    { hex: '#2563eb', percentage: '25%' },
+    { hex: '#10b981', percentage: '20%' },
+    { hex: '#f59e0b', percentage: '18%' },
+    { hex: '#8b5cf6', percentage: '15%' },
+    { hex: '#ef4444', percentage: '12%' },
+    { hex: '#6b7280', percentage: '10%' }
+  ];
+
+  return defaultColors.map(color => `
+    <div class="enhanced-color-swatch" 
+         style="background-color: ${color.hex};" 
+         title="${color.hex} (${color.percentage})"
+         onclick="copyColorToClipboard('${color.hex}')">
+      <div class="color-info">
+        <div class="color-hex">${color.hex}</div>
+        <div class="color-percent">${color.percentage}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Copy color hex code to clipboard
+async function copyColorToClipboard(hexColor) {
+  try {
+    await navigator.clipboard.writeText(hexColor);
+    
+    // Show success feedback
+    showColorCopyFeedback(hexColor);
+    
+    // Add to chat if open
+    if (aiChatPanel.classList.contains("active")) {
+      addAIMessage(`I've copied the color ${hexColor} to your clipboard!`);
+    }
+  } catch (error) {
+    console.error('Failed to copy color:', error);
+    
+    // Fallback: create temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = hexColor;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    
+    showColorCopyFeedback(hexColor);
+  }
+}
+
+// Show visual feedback when color is copied
+function showColorCopyFeedback(hexColor) {
+  // Create temporary feedback element
+  const feedback = document.createElement('div');
+  feedback.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: ${hexColor};
+    color: ${getContrastColor(hexColor)};
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: colorCopyPulse 0.6s ease-out;
+  `;
+  feedback.textContent = `${hexColor} copied!`;
+  
+  // Add animation keyframes if not already added
+  if (!document.querySelector('#colorCopyAnimation')) {
+    const style = document.createElement('style');
+    style.id = 'colorCopyAnimation';
+    style.textContent = `
+      @keyframes colorCopyPulse {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(feedback);
+  
+  // Remove after animation
+  setTimeout(() => {
+    feedback.remove();
+  }, 1500);
+}
+
+// Get contrasting text color for background
+function getContrastColor(hexColor) {
+  // Convert hex to RGB
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
+// Search by tag when clicked
+function searchByTag(tag) {
+  searchBox.value = tag;
+  page = 1;
+  searchImages();
+  
+  // Close modal if open
+  if (imageModal.classList.contains('active')) {
+    closeImageModal();
+  }
+  
+  // Add to chat if open
+  if (aiChatPanel.classList.contains("active")) {
+    addAIMessage(`Searching for images related to "${tag}".`);
+  }
+}
+
+// Enhanced color generation with better variety
+function generateRandomColor() {
+  // Generate colors with better saturation/brightness
+  const hue = Math.floor(Math.random() * 360);
+  const saturation = Math.floor(Math.random() * 50) + 50; // 50-100%
+  const lightness = Math.floor(Math.random() * 40) + 30;  // 30-70%
+  
+  // Convert HSL to hex
+  return hslToHex(hue, saturation, lightness);
+}
+
+// Convert HSL to hex color
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+// ...existing code...
 
 // Close image modal
 function closeImageModal() {
