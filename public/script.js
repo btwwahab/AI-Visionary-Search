@@ -707,7 +707,7 @@ function displayEnhancedAnalysis(analysis, container) {
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🖼️</span>
-          <h5 class="section-title">Enhanced Description</h5>
+          <h5 class="ai-title">Enhanced Description</h5>
           <small style="opacity: 0.7; font-size: 0.75rem;">
             AI-enhanced description based on image content
           </small>
@@ -717,7 +717,7 @@ function displayEnhancedAnalysis(analysis, container) {
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🎨</span>
-          <h5 class="section-title">Extracted Colors</h5>
+          <h5 class="ai-title">Extracted Colors</h5>
           <small style="opacity: 0.7; font-size: 0.75rem;">
             ${analysis.colorPalette ? 'Real colors from image pixels' : ''}
           </small>
