@@ -647,56 +647,70 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
   }
 }
 
-// Enhanced function to display only description and colors
-function displayEnhancedAnalysis(analysis, container) {
-  console.log('Analysis data:', analysis);
-  
-  // Only show colors if they exist, otherwise show error
-  const colorPaletteHTML = analysis.colorPalette && Array.isArray(analysis.colorPalette) 
-    ? analysis.colorPalette.map(color => `
-        <div class="enhanced-color-swatch" 
-             style="background-color: ${color.hex};" 
-             title="${color.hex} (${color.percentage})"
-             onclick="copyColorToClipboard('${color.hex}')">
-          <div class="color-info">
-            <div class="color-hex">${color.hex}</div>
-            <div class="color-percent">${color.percentage}</div>
-          </div>
-        </div>
-      `).join('') 
-    : `<div class="color-error">
-         <div class="error-icon">🎨</div>
-         <div class="error-message">Unable to extract actual colors from this image</div>
-       </div>`;
+// Analyze image colors using Canvas (returns array of hex colors with percentages)
+async function analyzeImageColors(imageUrl, colorCount = 6) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; // Needed for CORS images
 
-  container.innerHTML = `
-    <div class="enhanced-analysis-container">
-      
-      <!-- Visual Description -->
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🖼️</span>
-          <h5 class="section-title">Visual Description</h5>
-        </div>
-        <p class="analysis-text">${analysis.description || 'A beautiful and detailed image with rich visual elements.'}</p>
-      </div>
+    img.onload = function () {
+      // Draw image to canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
 
-      <!-- Color Palette -->
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🎨</span>
-          <h5 class="section-title">Actual Color Palette</h5>
-          <small style="opacity: 0.7; font-size: 0.75rem;">
-            ${analysis.colorPalette ? 'Click colors to copy hex codes' : 'Colors extracted from image pixels'}
-          </small>
-        </div>
-        <div class="enhanced-color-palette">
-          ${colorPaletteHTML}
-        </div>
-      </div>
+      // Get pixel data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
 
-    </div>
-  `;
+      // Count colors
+      const colorMap = {};
+      let totalPixels = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        // Ignore fully transparent pixels
+        if (data[i + 3] < 128) continue;
+        const rgb = [data[i], data[i + 1], data[i + 2]];
+        const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+        colorMap[hex] = (colorMap[hex] || 0) + 1;
+        totalPixels++;
+      }
+
+      // Sort colors by frequency
+      const sortedColors = Object.entries(colorMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, colorCount);
+
+      // Format as array of { hex, percentage }
+      const result = sortedColors.map(([hex, count]) => ({
+        hex,
+        percentage: ((count / totalPixels) * 100).toFixed(1) + '%'
+      }));
+
+      resolve(result);
+    };
+
+    img.onerror = function () {
+      reject(new Error('Failed to load image or CORS error.'));
+    };
+
+    img.src = imageUrl;
+  });
+}
+
+// Helper: Convert RGB to HEX
+function rgbToHex(r, g, b) {
+  return (
+    "#" +
+    [r, g, b]
+      .map((x) => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+      })
+      .join("")
+  );
 }
 
 // Copy color hex code to clipboard
