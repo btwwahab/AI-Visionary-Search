@@ -608,26 +608,40 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
     loadingContainer.style.display = 'flex';
     contentContainer.innerHTML = '';
 
-    // Use the GroqService for analysis
+    // Try to use the GroqService
+    let analysis;
     if (window.GroqService) {
       const groqService = new window.GroqService();
-      const analysis = await groqService.analyzeImage(imageUrl);
-      
-      // Hide loading
-      loadingContainer.style.display = 'none';
-      
-      // Display the analysis
-      displayEnhancedAnalysis(analysis, contentContainer);
+      analysis = await groqService.analyzeImage(imageUrl);
+    } else if (window.groqService) {
+      analysis = await window.groqService.analyzeImage(imageUrl);
     } else {
-      throw new Error('Analysis service not available');
+      throw new Error('Analysis service not available - make sure analysis.js is loaded');
     }
+    
+    // Hide loading
+    loadingContainer.style.display = 'none';
+    
+    // Display the analysis
+    displayEnhancedAnalysis(analysis, contentContainer);
+    
   } catch (error) {
     console.error('Analysis failed:', error);
     loadingContainer.style.display = 'none';
+    
+    // Show user-friendly error message
     contentContainer.innerHTML = `
       <div class="analysis-error">
-        <div class="error-message">❌ Unable to analyze this image</div>
-        <div class="error-message">${error.message}</div>
+        <div class="error-icon">🔍</div>
+        <div class="error-title">Analysis Unavailable</div>
+        <div class="error-message">
+          ${error.message.includes('API error') ? 
+            'The AI analysis service is temporarily unavailable. Please try again later.' :
+            'Unable to analyze this image at the moment.'}
+        </div>
+        <button class="retry-analysis-btn" onclick="performAIAnalysis('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'))">
+          Try Again
+        </button>
       </div>
     `;
   }
