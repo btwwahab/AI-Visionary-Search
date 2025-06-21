@@ -612,7 +612,7 @@ async function openImageModal(image) {
   await performAIAnalysisWithDescription(image.src, analysisContent, analysisLoading, unsplashDescription);
 }
 
-// Enhanced AI analysis function with Unsplash description
+// Enhanced AI analysis function with Unsplash description enhancement
 async function performAIAnalysisWithDescription(imageUrl, contentContainer, loadingContainer, unsplashDescription) {
   try {
     // Show loading state
@@ -622,14 +622,47 @@ async function performAIAnalysisWithDescription(imageUrl, contentContainer, load
     // Extract real colors from the image using Canvas
     const colorPalette = await analyzeImageColors(imageUrl);
 
-    // Use the actual Unsplash description
-    const description = unsplashDescription || "Image from Unsplash collection";
+    // Enhance the Unsplash description using Groq
+    let enhancedDescription = unsplashDescription || "Image from Unsplash collection";
+    
+    if (unsplashDescription && unsplashDescription.length > 5) {
+      try {
+        console.log('🤖 Enhancing description with Groq:', unsplashDescription);
+        
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            unsplashDescription: unsplashDescription,
+            imageUrl: imageUrl 
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.choices && data.choices[0] && data.choices[0].message) {
+            enhancedDescription = data.choices[0].message.content.trim();
+            console.log('✨ Enhanced description:', enhancedDescription);
+          }
+        } else {
+          console.log('⚠️ Groq enhancement failed, using original description');
+        }
+      } catch (error) {
+        console.log('⚠️ Description enhancement error, using original:', error);
+      }
+    }
 
     // Hide loading
     loadingContainer.style.display = 'none';
 
-    // Display the analysis (real Unsplash description + real colors)
-    displayEnhancedAnalysis({ description, colorPalette }, contentContainer);
+    // Display the analysis (enhanced description + real colors)
+    displayEnhancedAnalysis({ 
+      description: enhancedDescription, 
+      colorPalette: colorPalette,
+      originalDescription: unsplashDescription 
+    }, contentContainer);
 
   } catch (error) {
     console.error('Analysis failed:', error);
@@ -713,6 +746,7 @@ async function performAIAnalysisWithDescription(imageUrl, contentContainer, load
   }
 }
 
+// Update the displayEnhancedAnalysis function to show both descriptions
 function displayEnhancedAnalysis(analysis, container) {
   // Build color palette HTML
   let colorPaletteHTML = '';
@@ -738,16 +772,25 @@ function displayEnhancedAnalysis(analysis, container) {
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🖼️</span>
-          <h5 class="section-title">Visual Description</h5>
+          <h5 class="section-title">Enhanced Description</h5>
+          <small style="opacity: 0.7; font-size: 0.75rem;">
+            Based on Unsplash data, enhanced by AI
+          </small>
         </div>
         <p class="analysis-text">${analysis.description || 'No description available.'}</p>
+        ${analysis.originalDescription && analysis.originalDescription !== analysis.description ? 
+          `<details style="margin-top: 8px; opacity: 0.8;">
+            <summary style="cursor: pointer; font-size: 0.8rem; color: #888;">Original Unsplash Description</summary>
+            <p style="font-size: 0.8rem; margin: 4px 0 0 16px; font-style: italic;">${analysis.originalDescription}</p>
+          </details>` : ''
+        }
       </div>
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🎨</span>
-          <h5 class="section-title">Dominant Colors</h5>
+          <h5 class="section-title">Extracted Colors</h5>
           <small style="opacity: 0.7; font-size: 0.75rem;">
-            ${analysis.colorPalette ? 'Click a color to copy its hex code' : ''}
+            ${analysis.colorPalette ? 'Real colors from image pixels' : ''}
           </small>
         </div>
         <div class="enhanced-color-palette" style="display: flex; gap: 8px; flex-wrap: wrap;">

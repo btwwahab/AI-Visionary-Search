@@ -26,44 +26,50 @@ export default async function handler(req, res) {
     }
 
     // Validate request body
-    if (!req.body || !req.body.imageUrl) {
+    if (!req.body || !req.body.unsplashDescription) {
       return res.status(400).json({ 
         error: 'Invalid request',
-        message: 'Image URL is required' 
+        message: 'Unsplash description is required' 
       });
     }
 
-    const { imageUrl, imageDescription } = req.body;
+    const { unsplashDescription, imageUrl } = req.body;
     const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
     
-    console.log('Making request to Groq API for image color analysis...');
+    console.log('Making request to Groq API to enhance Unsplash description...');
     
     const requestBody = {
       model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
-          content: `You are an AI image content analyzer with FACTUAL REPORTING ONLY. Never make up information or tell stories.
+          content: `You are a professional image description writer. Your job is to take a basic image description from Unsplash and rewrite it into a more detailed, engaging, and natural description.
 
-When analyzing an image, provide ONLY these two sections with STRICTLY FACTUAL information:
+Rules:
+- Base your description ONLY on the provided Unsplash description
+- DO NOT add fictional details or make assumptions
+- Make it sound more natural and engaging while staying factual
+- Keep it to 2-3 sentences maximum
+- Focus on what IS described, not what you imagine
 
-🎨 VISUAL DESCRIPTION:
-[OBJECTIVELY describe ONLY what you actually see in the image. Include visible objects, people, setting and main visual elements. NO storytelling, NO assumptions, NO embellishments. Keep it to 1-2 factual sentences about what is visibly present.]
+Example:
+Input: "Yellow car on street"
+Output: "A vibrant yellow vintage car parked along a colorful street, creating a striking focal point against the urban backdrop."
 
-🎨 COLOR PALETTE:
-[Extract the most prominent colors from the image as accurate hex codes with percentages. Format: #HEX (XX%). Example: #3B82F6 (25%), #1E3A8A (20%), etc. Provide 5-6 colors that genuinely match what appears in the image.]
-
-IMPORTANT: If you cannot accurately determine what's in the image, your description should state "This appears to be [basic description]" rather than inventing details.`
+Input: "Person walking in forest"
+Output: "A person walks through a lush forest setting, surrounded by tall trees and natural greenery."`
         },
         {
           role: "user",
-          content: `Analyze this image: ${imageUrl}
+          content: `Please enhance this Unsplash image description to make it more natural and engaging:
 
-Please be 100% factual about what you actually see. Do not invent stories or make assumptions. Only describe the visible objects and colors you can directly observe.`
+"${unsplashDescription}"
+
+Remember: Only enhance what's already described. Don't add new details.`
         }
       ],
-      temperature: 0.1,
-      max_tokens: 500
+      temperature: 0.3,
+      max_tokens: 150
     };
     
     const response = await fetch(API_URL, {
