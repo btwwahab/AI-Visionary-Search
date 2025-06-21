@@ -326,7 +326,7 @@ async function searchImages() {
   }
 }
 
-// Display images in the grid
+// Display images in the grid (updated to store better descriptions)
 function displayImages(results) {
   // Ensure results exist and is an array
   if (!Array.isArray(results)) {
@@ -349,7 +349,14 @@ function displayImages(results) {
     image.alt = result.alt_description || "Unsplash Image";
     image.classList.add("result-img");
     image.dataset.full = result.urls.full;
-    image.dataset.description = result.description || result.alt_description || "Image";
+    
+    // Store the best available description
+    const bestDescription = result.description || 
+                           result.alt_description || 
+                           `Photo by ${result.user.name}` ||
+                           "Beautiful image from Unsplash";
+    
+    image.dataset.description = bestDescription;
     image.dataset.width = result.width;
     image.dataset.height = result.height;
 
@@ -362,7 +369,7 @@ function displayImages(results) {
 
     const aiTag = document.createElement("div");
     aiTag.classList.add("ai-tag");
-    aiTag.innerHTML = `<span class="pulse-dot"></span>AI Enhanced`;
+    aiTag.innerHTML = `<span class="pulse-dot"></span>Real Colors`;
 
     overlay.appendChild(photographer);
     overlay.appendChild(aiTag);
@@ -578,6 +585,7 @@ function showAISearchAnimation() {
 }
 
 // Open image modal
+// Open image modal (updated to pass Unsplash description)
 async function openImageModal(image) {
   const imageModal = document.getElementById('image-modal');
   const modalImage = document.getElementById('modal-image');
@@ -586,6 +594,9 @@ async function openImageModal(image) {
   const modalAspect = document.getElementById('modal-aspect');
   const analysisContent = document.getElementById('analysis-content');
   const analysisLoading = document.getElementById('analysis-loading');
+
+  // Get the actual Unsplash description
+  const unsplashDescription = image.dataset.description || image.alt || "Beautiful image from Unsplash";
 
   // Set image data
   modalImage.src = image.dataset.full;
@@ -597,12 +608,12 @@ async function openImageModal(image) {
   imageModal.classList.add('active');
   document.body.classList.add('modal-open');
 
-  // Start AI analysis
-  await performAIAnalysis(image.src, analysisContent, analysisLoading);
+  // Start AI analysis with Unsplash description
+  await performAIAnalysisWithDescription(image.src, analysisContent, analysisLoading, unsplashDescription);
 }
 
-// Enhanced AI analysis function
-async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
+// Enhanced AI analysis function with Unsplash description
+async function performAIAnalysisWithDescription(imageUrl, contentContainer, loadingContainer, unsplashDescription) {
   try {
     // Show loading state
     loadingContainer.style.display = 'flex';
@@ -611,20 +622,13 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
     // Extract real colors from the image using Canvas
     const colorPalette = await analyzeImageColors(imageUrl);
 
-    // Optionally, you can still get a description from Groq if you want
-    let description = "Dominant colors extracted from the image.";
-    if (window.GroqService) {
-      const groqService = new window.GroqService();
-      const aiResult = await groqService.analyzeImage(imageUrl);
-      if (aiResult && aiResult.description) {
-        description = aiResult.description;
-      }
-    }
+    // Use the actual Unsplash description
+    const description = unsplashDescription || "Image from Unsplash collection";
 
     // Hide loading
     loadingContainer.style.display = 'none';
 
-    // Display the analysis (real colors + description)
+    // Display the analysis (real Unsplash description + real colors)
     displayEnhancedAnalysis({ description, colorPalette }, contentContainer);
 
   } catch (error) {
@@ -635,9 +639,73 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
         <div class="error-icon">🔍</div>
         <div class="error-title">Analysis Unavailable</div>
         <div class="error-message">
-          Unable to analyze this image at the moment.
+          Unable to extract colors from this image.
         </div>
-        <button class="retry-analysis-btn" onclick="performAIAnalysis('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'))">
+        <button class="retry-analysis-btn" onclick="performAIAnalysisWithDescription('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'), '${unsplashDescription}')">
+          Try Again
+        </button>
+      </div>
+    `;
+  }
+}
+
+// Open image modal (updated to pass Unsplash description)
+async function openImageModal(image) {
+  const imageModal = document.getElementById('image-modal');
+  const modalImage = document.getElementById('modal-image');
+  const modalTitle = document.getElementById('modal-title');
+  const modalResolution = document.getElementById('modal-resolution');
+  const modalAspect = document.getElementById('modal-aspect');
+  const analysisContent = document.getElementById('analysis-content');
+  const analysisLoading = document.getElementById('analysis-loading');
+
+  // Get the actual Unsplash description
+  const unsplashDescription = image.dataset.description || image.alt || "Beautiful image from Unsplash";
+
+  // Set image data
+  modalImage.src = image.dataset.full;
+  modalTitle.textContent = image.dataset.description || "Beautiful Image";
+  modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
+  modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
+  
+  // Show modal
+  imageModal.classList.add('active');
+  document.body.classList.add('modal-open');
+
+  // Start AI analysis with Unsplash description
+  await performAIAnalysisWithDescription(image.src, analysisContent, analysisLoading, unsplashDescription);
+}
+
+// Enhanced AI analysis function with Unsplash description
+async function performAIAnalysisWithDescription(imageUrl, contentContainer, loadingContainer, unsplashDescription) {
+  try {
+    // Show loading state
+    loadingContainer.style.display = 'flex';
+    contentContainer.innerHTML = '';
+
+    // Extract real colors from the image using Canvas
+    const colorPalette = await analyzeImageColors(imageUrl);
+
+    // Use the actual Unsplash description
+    const description = unsplashDescription || "Image from Unsplash collection";
+
+    // Hide loading
+    loadingContainer.style.display = 'none';
+
+    // Display the analysis (real Unsplash description + real colors)
+    displayEnhancedAnalysis({ description, colorPalette }, contentContainer);
+
+  } catch (error) {
+    console.error('Analysis failed:', error);
+    loadingContainer.style.display = 'none';
+    contentContainer.innerHTML = `
+      <div class="analysis-error">
+        <div class="error-icon">🔍</div>
+        <div class="error-title">Analysis Unavailable</div>
+        <div class="error-message">
+          Unable to extract colors from this image.
+        </div>
+        <button class="retry-analysis-btn" onclick="performAIAnalysisWithDescription('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'), '${unsplashDescription}')">
           Try Again
         </button>
       </div>
