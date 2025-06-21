@@ -647,11 +647,11 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
   }
 }
 
-// Enhanced function to display analysis with better color handling
+// Enhanced function to display only description and colors
 function displayEnhancedAnalysis(analysis, container) {
-  console.log('Analysis data:', analysis); // Debug log to see what we're getting
+  console.log('Analysis data:', analysis);
   
-  // Create color palette HTML with improved styling and error handling
+  // Only show colors if they exist, otherwise show error
   const colorPaletteHTML = analysis.colorPalette && Array.isArray(analysis.colorPalette) 
     ? analysis.colorPalette.map(color => `
         <div class="enhanced-color-swatch" 
@@ -664,14 +664,10 @@ function displayEnhancedAnalysis(analysis, container) {
           </div>
         </div>
       `).join('') 
-    : generateDefaultColorPalette(); // Fallback if no colors
-
-  // Create tags HTML with improved styling
-  const tagsHTML = analysis.tags && Array.isArray(analysis.tags) 
-    ? analysis.tags.map(tag => `
-        <span class="enhanced-ai-tag" onclick="searchByTag('${tag}')">${tag}</span>
-      `).join('') 
-    : '<span class="enhanced-ai-tag">visual</span><span class="enhanced-ai-tag">creative</span>';
+    : `<div class="color-error">
+         <div class="error-icon">🎨</div>
+         <div class="error-message">Unable to extract actual colors from this image</div>
+       </div>`;
 
   container.innerHTML = `
     <div class="enhanced-analysis-container">
@@ -685,107 +681,22 @@ function displayEnhancedAnalysis(analysis, container) {
         <p class="analysis-text">${analysis.description || 'A beautiful and detailed image with rich visual elements.'}</p>
       </div>
 
-      <!-- Tags -->
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🏷️</span>
-          <h5 class="section-title">Content Tags</h5>
-        </div>
-        <div class="enhanced-tag-cloud">
-          ${tagsHTML}
-        </div>
-      </div>
-
-      <!-- Mood & Atmosphere -->
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🎭</span>
-          <h5 class="section-title">Mood & Atmosphere</h5>
-        </div>
-        <p class="analysis-text">${analysis.mood || 'A captivating atmosphere with rich emotional depth and visual harmony.'}</p>
-      </div>
-
       <!-- Color Palette -->
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🎨</span>
-          <h5 class="section-title">Color Palette</h5>
-          <small style="opacity: 0.7; font-size: 0.75rem;">Click colors to copy hex codes</small>
+          <h5 class="section-title">Actual Color Palette</h5>
+          <small style="opacity: 0.7; font-size: 0.75rem;">
+            ${analysis.colorPalette ? 'Click colors to copy hex codes' : 'Colors extracted from image pixels'}
+          </small>
         </div>
         <div class="enhanced-color-palette">
           ${colorPaletteHTML}
         </div>
       </div>
 
-      <!-- Additional Analysis Sections -->
-      ${analysis.composition ? `
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">📐</span>
-          <h5 class="section-title">Composition Analysis</h5>
-        </div>
-        <p class="analysis-text">${analysis.composition}</p>
-      </div>
-      ` : ''}
-
-      ${analysis.artisticStyle ? `
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🎯</span>
-          <h5 class="section-title">Artistic Style</h5>
-        </div>
-        <p class="analysis-text">${analysis.artisticStyle}</p>
-      </div>
-      ` : ''}
-
-      ${analysis.technicalQuality ? `
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">⭐</span>
-          <h5 class="section-title">Technical Quality</h5>
-        </div>
-        <p class="analysis-text">${analysis.technicalQuality}</p>
-      </div>
-      ` : ''}
-
-      ${analysis.notableElements ? `
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🔍</span>
-          <h5 class="section-title">Notable Elements</h5>
-        </div>
-        <p class="analysis-text">${analysis.notableElements}</p>
-      </div>
-      ` : ''}
-
     </div>
   `;
-}
-
-// Add these new helper functions for enhanced color functionality
-
-// Generate default color palette if AI analysis doesn't provide one
-function generateDefaultColorPalette() {
-  const defaultColors = [
-    { hex: '#2563eb', percentage: '25%' },
-    { hex: '#10b981', percentage: '20%' },
-    { hex: '#f59e0b', percentage: '18%' },
-    { hex: '#8b5cf6', percentage: '15%' },
-    { hex: '#ef4444', percentage: '12%' },
-    { hex: '#6b7280', percentage: '10%' }
-  ];
-
-  return defaultColors.map(color => `
-    <div class="enhanced-color-swatch" 
-         style="background-color: ${color.hex};" 
-         title="${color.hex} (${color.percentage})"
-         onclick="copyColorToClipboard('${color.hex}')">
-      <div class="color-info">
-        <div class="color-hex">${color.hex}</div>
-        <div class="color-percent">${color.percentage}</div>
-      </div>
-    </div>
-  `).join('');
 }
 
 // Copy color hex code to clipboard

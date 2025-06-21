@@ -36,48 +36,30 @@ export default async function handler(req, res) {
     const { imageUrl, imageDescription } = req.body;
     const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
     
-    console.log('Making request to Groq API for comprehensive image analysis...');
+    console.log('Making request to Groq API for image color analysis...');
     
     const requestBody = {
       model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
-          content: `You are an expert AI image analyst. Analyze the image and provide a response in EXACTLY this format with proper spacing:
+          content: `You are an expert AI color analyst. Analyze the image and provide ONLY these two sections:
 
 🎨 VISUAL DESCRIPTION:
-[Write 2-3 detailed sentences describing what you see in the image - subjects, setting, lighting, composition, colors, mood]
-
-🏷️ CONTENT TAGS:
-[List 8-10 relevant tags separated by commas - include objects, style, mood, colors, technique. Example: landscape, mountains, sunset, golden hour, peaceful, serene, nature, photography]
-
-🎭 MOOD & ATMOSPHERE:
-[Write 1-2 sentences describing the emotional tone and atmosphere the image conveys]
+[Write 2-3 detailed sentences describing what you see in the image - subjects, setting, lighting, composition]
 
 🎨 COLOR PALETTE:
-[List 5-6 actual hex color codes with percentages in this exact format: #FF6B6B (25%), #4ECDC4 (20%), #45B7D1 (18%), #96CEB4 (15%), #FFEAA7 (12%), #DDA0DD (10%)]
+[Extract the actual dominant colors from the image and list them as hex codes with percentages. Use this exact format: #FF6B6B (25%), #4ECDC4 (20%), #45B7D1 (18%), #96CEB4 (15%), #FFEAA7 (12%), #DDA0DD (10%)]
 
-📐 COMPOSITION ANALYSIS:
-[Describe composition techniques like rule of thirds, leading lines, symmetry, depth of field, framing]
-
-🎯 ARTISTIC STYLE:
-[Identify the style - photography, digital art, painting, illustration, realistic, abstract, etc.]
-
-⭐ TECHNICAL QUALITY:
-[Assess lighting, focus, exposure, resolution, and overall technical execution]
-
-🔍 NOTABLE ELEMENTS:
-[Highlight 2-3 unique or interesting aspects that make this image stand out]
-
-IMPORTANT: Use real hex color codes that match the actual colors you see in the image. Ensure each section has proper content and spacing.`
+CRITICAL: Extract real hex color codes that actually match the colors visible in the image. Look at the actual pixel colors, not generic color palettes. Provide 5-6 colors that are genuinely present in the image.`
         },
         {
           role: "user",
-          content: `Please analyze this image in detail: ${imageUrl}`
+          content: `Please analyze the colors and describe this image: ${imageUrl}`
         }
       ],
-      temperature: 0.3,
-      max_tokens: 1000
+      temperature: 0.1,
+      max_tokens: 500
     };
     
     const response = await fetch(API_URL, {
