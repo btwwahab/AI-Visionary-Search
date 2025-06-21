@@ -584,34 +584,6 @@ function showAISearchAnimation() {
   }, 3000);
 }
 
-// Open image modal
-// Open image modal (updated to pass Unsplash description)
-async function openImageModal(image) {
-  const imageModal = document.getElementById('image-modal');
-  const modalImage = document.getElementById('modal-image');
-  // const modalTitle = document.getElementById('modal-title');
-  const modalResolution = document.getElementById('modal-resolution');
-  const modalAspect = document.getElementById('modal-aspect');
-  const analysisContent = document.getElementById('analysis-content');
-  const analysisLoading = document.getElementById('analysis-loading');
-
-  // Get the actual Unsplash description
-  const unsplashDescription = image.dataset.description || image.alt || "Beautiful image from Unsplash";
-
-  // Set image data
-  modalImage.src = image.dataset.full;
-  // modalTitle.textContent = image.dataset.description || "Beautiful Image";
-  modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
-  modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
-
-  // Show modal
-  imageModal.classList.add('active');
-  document.body.classList.add('modal-open');
-
-  // Start AI analysis with Unsplash description
-  await performAIAnalysisWithDescription(image.src, analysisContent, analysisLoading, unsplashDescription);
-}
-
 // Enhanced AI analysis function with Unsplash description enhancement
 async function performAIAnalysisWithDescription(imageUrl, contentContainer, loadingContainer, unsplashDescription) {
   try {
