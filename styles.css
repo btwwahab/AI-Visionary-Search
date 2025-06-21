@@ -3059,3 +3059,79 @@ h1 {
         height: 32px;
     }
 }
+
+/* Add to your styles.css file */
+
+/* AI Analysis Styles */
+#ai-analysis {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-section-title {
+  color: #00e5ff;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.analysis-item {
+  margin-bottom: 15px;
+}
+
+.analysis-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.analysis-text {
+  margin: 0;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.ai-tag {
+  background: rgba(0, 229, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #00e5ff;
+  transition: background 0.2s ease;
+}
+
+.ai-tag:hover {
+  background: rgba(0, 229, 255, 0.2);
+}
+
+.analysis-error {
+  color: #ff6b6b;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.analysis-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.loader-text {
+  margin-top: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}

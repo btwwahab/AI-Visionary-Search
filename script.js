@@ -69,6 +69,8 @@ function init() {
 
   fetchCategories();
   startCategoryRefresh();
+
+  setupGroqService();
 }
 
 // Set up all event listeners
@@ -578,94 +580,99 @@ function showAISearchAnimation() {
 
 // Open image modal
 async function openImageModal(image) {
-  modalImage.src = image.src;
-  modalTitle.textContent = image.dataset.description;
-  modalResolution.textContent = `${image.dataset.width} × ${image.dataset.height}`;
-
-  // Calculate aspect ratio
-  const gcd = (a, b) => b ? gcd(b, a % b) : a;
-  const divisor = gcd(image.dataset.width, image.dataset.height);
-  const aspectW = image.dataset.width / divisor;
-  const aspectH = image.dataset.height / divisor;
-  modalAspect.textContent = `${aspectW}:${aspectH}`;
-
-  // Create and show the loader
-  const colorPalette = document.querySelector('.color-palette');
-  colorPalette.innerHTML = '';
-
-  const analysisLoader = document.createElement('div');
-  analysisLoader.classList.add('color-analysis-loader');
-  analysisLoader.innerHTML = `
-    
-    <div class="loader-text">AI Analyzing Colors...</div>
-  `;
-  colorPalette.appendChild(analysisLoader);
-
-  // Create an off-screen canvas to analyze the image
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const img = new Image();
-
-  img.crossOrigin = "Anonymous";
-  img.src = image.src;
-
-  img.onload = () => {
-    // Add artificial delay for loader visualization
-    setTimeout(() => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      const colorMap = new Map();
-
-      // Remove loader
-      colorPalette.removeChild(analysisLoader);
-
-      // Analyze pixels with better sampling
-      for (let i = 0; i < imageData.length; i += 4) {
-        const r = Math.floor(imageData[i] / 32) * 32;
-        const g = Math.floor(imageData[i + 1] / 32) * 32;
-        const b = Math.floor(imageData[i + 2] / 32) * 32;
-        const a = imageData[i + 3];
-
-        if (a < 128) continue;
-
-        const rgb = `rgb(${r},${g},${b})`;
-        colorMap.set(rgb, (colorMap.get(rgb) || 0) + 1);
-      }
-
-      // Convert to array and sort by frequency
-      const sortedColors = Array.from(colorMap.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([color]) => color);
-
-      console.log("Sorted Colors:", sortedColors);
-
-
-      // Update color palette
-      sortedColors.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.classList.add('color-swatch');
-        swatch.style.backgroundColor = color;
-
-        swatch.title = color;
-
-        const percentage = ((colorMap.get(color) / (canvas.width * canvas.height)) * 100).toFixed(1);
-        const label = document.createElement('span');
-        label.classList.add('color-percentage');
-        label.textContent = `${percentage}%`;
-        swatch.appendChild(label);
-
-        colorPalette.appendChild(swatch);
-      });
-    }, 1500); // 1.5 second delay for loader animation
-  };
-
+  const src = image.src;
+  const title = image.dataset.title || 'Untitled Image';
+  const photographer = image.dataset.photographer || 'Unknown Photographer';
+  const width = image.dataset.width || '1000';
+  const height = image.dataset.height || '1000';
+  const resolution = `${width}px × ${height}px`;
+  const aspectRatio = calculateAspectRatio(width, height);
+  
+  modalImage.src = src;
+  modalTitle.textContent = title;
+  modalResolution.textContent = resolution;
+  modalAspect.textContent = aspectRatio;
+  modalDownload.setAttribute('data-url', src);
+  modalShare.setAttribute('data-url', src);
+  modalShare.setAttribute('data-title', title);
+  
   // Show modal
   imageModal.classList.add('active');
   document.body.classList.add('modal-open');
+  
+  // Add AI analysis section if it doesn't exist
+  let aiAnalysisSection = document.getElementById('ai-analysis');
+  if (!aiAnalysisSection) {
+    const modalInfo = document.querySelector('.modal-info') || document.querySelector('.modal-content');
+    if (modalInfo) {
+      aiAnalysisSection = document.createElement('div');
+      aiAnalysisSection.id = 'ai-analysis';
+      aiAnalysisSection.className = 'modal-section';
+      modalInfo.appendChild(aiAnalysisSection);
+    }
+  }
+  
+  // Show loading state in AI analysis section (moved after initialization)
+  if (aiAnalysisSection) {
+    aiAnalysisSection.innerHTML = `
+      <h4 class="modal-section-title">AI Analysis</h4>
+      <div class="analysis-loading">
+        <div class="loader-ring"><div class="loader-circle"></div></div>
+        <div class="loader-text">AI analyzing image...</div>
+      </div>
+      <div class="analysis-content" style="display: none;"></div>
+    `;
+  }
+  
+  // Analyze image with groqService
+  if (window.groqService && aiAnalysisSection) {
+    try {
+      const imageDescription = image.alt || image.dataset.description || '';
+      const analysis = await window.groqService.analyzeImage(src, imageDescription);
+      
+      // Update UI with analysis results
+      const loadingElement = aiAnalysisSection.querySelector('.analysis-loading');
+      const contentElement = aiAnalysisSection.querySelector('.analysis-content');
+      
+      if (loadingElement) loadingElement.style.display = 'none';
+      if (contentElement) {
+        contentElement.style.display = 'block';
+        contentElement.innerHTML = `
+          <div class="analysis-item">
+            <span class="analysis-label">AI Description</span>
+            <p class="analysis-text">${analysis.description}</p>
+          </div>
+          <div class="analysis-item">
+            <span class="analysis-label">Content Tags</span>
+            <div class="tag-cloud">
+              ${analysis.tags.map(tag => `<span class="ai-tag">${tag}</span>`).join('')}
+            </div>
+          </div>
+          <div class="analysis-item">
+            <span class="analysis-label">Mood & Tone</span>
+            <p class="analysis-text">${analysis.mood}</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      
+      // Show error message
+      const loadingElement = aiAnalysisSection.querySelector('.analysis-loading');
+      const contentElement = aiAnalysisSection.querySelector('.analysis-content');
+      
+      if (loadingElement) loadingElement.style.display = 'none';
+      if (contentElement) {
+        contentElement.style.display = 'block';
+        contentElement.innerHTML = `
+          <div class="analysis-error">
+            <p>Unable to analyze this image at the moment.</p>
+            <p class="error-message">Please try again later.</p>
+          </div>
+        `;
+      }
+    }
+  }
 }
 
 // Close image modal
@@ -1025,6 +1032,38 @@ function animateCounterMillions(element, target) {
     requestAnimationFrame(update);
 }
 
+function setupGroqService() {
+  // For testing/development only - in production use a backend service
+  if (window.ENV && window.ENV.GROQ_API_KEY) {
+    window.groqService.init(window.ENV.GROQ_API_KEY);
+  } else {
+    console.warn('Groq API key not found. AI analysis will not work.');
+  }
+}
+
+// Add this function to your script.js file
+
+// Calculate aspect ratio from width and height
+function calculateAspectRatio(width, height) {
+  // Convert to numbers
+  width = parseInt(width);
+  height = parseInt(height);
+  
+  // Find the greatest common divisor (GCD) using Euclidean algorithm
+  function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b);
+  }
+  
+  // Calculate the GCD to simplify the ratio
+  const divisor = gcd(width, height);
+  
+  // Calculate simplified ratio
+  const ratioWidth = width / divisor;
+  const ratioHeight = height / divisor;
+  
+  // Return as string in format "16:9"
+  return `${ratioWidth}:${ratioHeight}`;
+}
 
 // Initialize the app when DOM is fully loaded
 document.addEventListener("DOMContentLoaded", init);
