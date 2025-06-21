@@ -728,34 +728,6 @@ function displayEnhancedAnalysis(analysis, container) {
   } else {
     colorPaletteHTML = `<div class="color-error">No colors could be extracted from this image.</div>`;
   }
-
-  // Set the container HTML - removed original description section
-  container.innerHTML = `
-    <div class="enhanced-analysis-container">
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🖼️</span>
-          <h5 class="section-title">Enhanced Description</h5>
-          <small style="opacity: 0.7; font-size: 0.75rem;">
-            AI-enhanced description based on image content
-          </small>
-        </div>
-        <p class="analysis-text">${analysis.description || 'No description available.'}</p>
-      </div>
-      <div class="analysis-section">
-        <div class="section-header">
-          <span class="section-icon">🎨</span>
-          <h5 class="section-title">Extracted Colors</h5>
-          <small style="opacity: 0.7; font-size: 0.75rem;">
-            ${analysis.colorPalette ? 'Real colors from image pixels' : ''}
-          </small>
-        </div>
-        <div class="enhanced-color-palette" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          ${colorPaletteHTML}
-        </div>
-      </div>
-    </div>
-  `;
 }
 
 async function analyzeImageColors(imageUrl, colorCount = 6) {
