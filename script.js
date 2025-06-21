@@ -70,7 +70,6 @@ function init() {
   fetchCategories();
   startCategoryRefresh();
 
-  setupGroqService();
 }
 
 // Set up all event listeners
@@ -1030,15 +1029,6 @@ function animateCounterMillions(element, target) {
     }
     
     requestAnimationFrame(update);
-}
-
-function setupGroqService() {
-  // For testing/development only - in production use a backend service
-  if (window.ENV && window.ENV.GROQ_API_KEY) {
-    window.groqService.init(window.ENV.GROQ_API_KEY);
-  } else {
-    console.warn('Groq API key not found. AI analysis will not work.');
-  }
 }
 
 // Add this function to your script.js file
