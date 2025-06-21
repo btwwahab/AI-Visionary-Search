@@ -589,7 +589,7 @@ function showAISearchAnimation() {
 async function openImageModal(image) {
   const imageModal = document.getElementById('image-modal');
   const modalImage = document.getElementById('modal-image');
-  const modalTitle = document.getElementById('modal-title');
+  // const modalTitle = document.getElementById('modal-title');
   const modalResolution = document.getElementById('modal-resolution');
   const modalAspect = document.getElementById('modal-aspect');
   const analysisContent = document.getElementById('analysis-content');
