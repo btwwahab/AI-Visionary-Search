@@ -2,7 +2,7 @@
 
 class GroqService {
   constructor() {
-    this.apiEndpoint = '/api/image-analysis'; // Vercel serverless function endpoint
+    this.apiEndpoint = '/api/agent'; // Vercel serverless function endpoint
   }
 
   // Analyze image using serverless API endpoint
