@@ -709,43 +709,6 @@ async function openImageModal(image) {
   await performAIAnalysisWithDescription(image.src, analysisContent, analysisLoading, unsplashDescription);
 }
 
-// Enhanced AI analysis function with Unsplash description
-async function performAIAnalysisWithDescription(imageUrl, contentContainer, loadingContainer, unsplashDescription) {
-  try {
-    // Show loading state
-    loadingContainer.style.display = 'flex';
-    contentContainer.innerHTML = '';
-
-    // Extract real colors from the image using Canvas
-    const colorPalette = await analyzeImageColors(imageUrl);
-
-    // Use the actual Unsplash description
-    const description = unsplashDescription || "Image from Unsplash collection";
-
-    // Hide loading
-    loadingContainer.style.display = 'none';
-
-    // Display the analysis (real Unsplash description + real colors)
-    displayEnhancedAnalysis({ description, colorPalette }, contentContainer);
-
-  } catch (error) {
-    console.error('Analysis failed:', error);
-    loadingContainer.style.display = 'none';
-    contentContainer.innerHTML = `
-      <div class="analysis-error">
-        <div class="error-icon">🔍</div>
-        <div class="error-title">Analysis Unavailable</div>
-        <div class="error-message">
-          Unable to extract colors from this image.
-        </div>
-        <button class="retry-analysis-btn" onclick="performAIAnalysisWithDescription('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'), '${unsplashDescription}')">
-          Try Again
-        </button>
-      </div>
-    `;
-  }
-}
-
 // Update the displayEnhancedAnalysis function to show both descriptions
 function displayEnhancedAnalysis(analysis, container) {
   // Build color palette HTML
