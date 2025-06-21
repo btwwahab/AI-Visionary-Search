@@ -1,53 +1,63 @@
-// Groq API integration for image analysis - client side
-
 class GroqService {
   constructor() {
-    this.apiEndpoint = '/api/agent'; // Vercel serverless function endpoint
+    this.apiEndpoint = '/api/agent';
   }
 
-  // Analyze image using serverless API endpoint
   async analyzeImage(imageUrl, imageDescription = '') {
     try {
-      // Call the serverless function instead of direct API
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl, imageDescription })
       });
 
+      // Check if response is ok
       if (!response.ok) {
-        const errorData = await response.json();
+        const text = await response.text();
+        console.error('API Response Error:', text);
+        
+        // Try to parse as JSON, fallback to text
+        let errorData;
+        try {
+          errorData = JSON.parse(text);
+        } catch {
+          errorData = { error: `Server error: ${response.status}` };
+        }
+        
         throw new Error(`API error: ${errorData.error || response.statusText}`);
       }
 
       // Parse response
       const data = await response.json();
+      
+      // Validate response structure
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid API response structure');
+      }
+      
       const content = data.choices[0].message.content;
 
-      // Extract information
       return {
         description: this.extractSection(content, 'description') || 
                      this.extractSection(content, '1') || 
-                     'No description available',
-        tags: this.extractTags(content) || ['No tags available'],
+                     'AI analysis not available at the moment',
+        tags: this.extractTags(content) || ['general', 'image'],
         mood: this.extractSection(content, 'mood') || 
               this.extractSection(content, '3') || 
               'Neutral'
       };
     } catch (error) {
       console.error('Error analyzing image:', error);
-      throw error;
+      throw new Error(`Analysis failed: ${error.message}`);
     }
   }
 
-  // Helper method to extract sections from the response
   extractSection(content, sectionName) {
     const regex = new RegExp(`${sectionName}[:\\s]+(.*?)(?=\\n\\n|\\n[0-9]|\\n[A-Za-z]+:|$)`, 'is');
     const match = content.match(regex);
     return match ? match[1].trim() : null;
   }
 
-  // Helper method to extract tags
   extractTags(content) {
     const tagsSection = this.extractSection(content, 'tags') || 
                         this.extractSection(content, 'content tags') || 
@@ -57,10 +67,10 @@ class GroqService {
     
     return tagsSection.split(/,|\n/)
       .map(tag => tag.replace(/^[\s\d\-•]+/, '').trim())
-      .filter(tag => tag.length > 0);
+      .filter(tag => tag.length > 0)
+      .slice(0, 10); // Limit to 10 tags
   }
 }
 
-// Create global instance
 window.groqService = new GroqService();
 console.log('GroqService initialized (secure API implementation)');

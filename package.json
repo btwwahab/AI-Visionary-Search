@@ -1,0 +1,12 @@
+{
+  "name": "neuralvision-image-search",
+  "version": "1.0.0",
+  "description": "AI-powered image search engine",
+  "main": "index.html",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "scripts": {
+    "build": "echo 'No build step required'"
+  }
+}

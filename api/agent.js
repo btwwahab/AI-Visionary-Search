@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,7 +26,10 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Image URL is required' });
     }
 
-    // Define system prompt for image analysis
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
+    }
+
     const systemPrompt = `You are an expert image analyst with deep knowledge of visual elements, composition, and artistic styles. Analyze images with precision and provide detailed insights.
 
 RESPONSE STRUCTURE:
@@ -61,9 +64,9 @@ RESPONSE STRUCTURE:
 
     return res.status(200).json(response.data);
   } catch (error) {
-    console.error('Image Analysis API Error:', error);
-    return res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error?.message || 'Failed to analyze image'
+    console.error('Image Analysis API Error:', error.response?.data || error.message);
+    return res.status(500).json({
+      error: error.response?.data?.error?.message || error.message || 'Failed to analyze image'
     });
   }
-};
+}
