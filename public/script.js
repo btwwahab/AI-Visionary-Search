@@ -608,36 +608,34 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
     loadingContainer.style.display = 'flex';
     contentContainer.innerHTML = '';
 
-    // Try to use the GroqService
-    let analysis;
+    // Extract real colors from the image using Canvas
+    const colorPalette = await analyzeImageColors(imageUrl);
+
+    // Optionally, you can still get a description from Groq if you want
+    let description = "Dominant colors extracted from the image.";
     if (window.GroqService) {
       const groqService = new window.GroqService();
-      analysis = await groqService.analyzeImage(imageUrl);
-    } else if (window.groqService) {
-      analysis = await window.groqService.analyzeImage(imageUrl);
-    } else {
-      throw new Error('Analysis service not available - make sure analysis.js is loaded');
+      const aiResult = await groqService.analyzeImage(imageUrl);
+      if (aiResult && aiResult.description) {
+        description = aiResult.description;
+      }
     }
-    
+
     // Hide loading
     loadingContainer.style.display = 'none';
-    
-    // Display the analysis
-    displayEnhancedAnalysis(analysis, contentContainer);
-    
+
+    // Display the analysis (real colors + description)
+    displayEnhancedAnalysis({ description, colorPalette }, contentContainer);
+
   } catch (error) {
     console.error('Analysis failed:', error);
     loadingContainer.style.display = 'none';
-    
-    // Show user-friendly error message
     contentContainer.innerHTML = `
       <div class="analysis-error">
         <div class="error-icon">🔍</div>
         <div class="error-title">Analysis Unavailable</div>
         <div class="error-message">
-          ${error.message.includes('API error') ? 
-            'The AI analysis service is temporarily unavailable. Please try again later.' :
-            'Unable to analyze this image at the moment.'}
+          Unable to analyze this image at the moment.
         </div>
         <button class="retry-analysis-btn" onclick="performAIAnalysis('${imageUrl}', document.getElementById('analysis-content'), document.getElementById('analysis-loading'))">
           Try Again
@@ -647,7 +645,51 @@ async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
   }
 }
 
-// Analyze image colors using Canvas (returns array of hex colors with percentages)
+function displayEnhancedAnalysis(analysis, container) {
+  // Build color palette HTML
+  let colorPaletteHTML = '';
+  if (analysis.colorPalette && Array.isArray(analysis.colorPalette) && analysis.colorPalette.length > 0) {
+    colorPaletteHTML = analysis.colorPalette.map(color => `
+      <div class="enhanced-color-swatch"
+           style="background-color: ${color.hex};"
+           title="${color.hex} (${color.percentage})"
+           onclick="copyColorToClipboard('${color.hex}')">
+        <div class="color-info">
+          <div class="color-hex">${color.hex}</div>
+          <div class="color-percent">${color.percentage}</div>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    colorPaletteHTML = `<div class="color-error">No colors could be extracted from this image.</div>`;
+  }
+
+  // Set the container HTML
+  container.innerHTML = `
+    <div class="enhanced-analysis-container">
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🖼️</span>
+          <h5 class="section-title">Visual Description</h5>
+        </div>
+        <p class="analysis-text">${analysis.description || 'No description available.'}</p>
+      </div>
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🎨</span>
+          <h5 class="section-title">Dominant Colors</h5>
+          <small style="opacity: 0.7; font-size: 0.75rem;">
+            ${analysis.colorPalette ? 'Click a color to copy its hex code' : ''}
+          </small>
+        </div>
+        <div class="enhanced-color-palette" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          ${colorPaletteHTML}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function analyzeImageColors(imageUrl, colorCount = 6) {
   return new Promise((resolve, reject) => {
     const img = new Image();
