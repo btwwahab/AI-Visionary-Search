@@ -20,13 +20,18 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Request body:', req.body);
+    console.log('Environment check:', process.env.GROQ_API_KEY ? 'API Key exists' : 'API Key missing');
+
     const { imageUrl, imageDescription } = req.body;
 
     if (!imageUrl) {
+      console.log('Missing imageUrl in request');
       return res.status(400).json({ error: 'Image URL is required' });
     }
 
     if (!process.env.GROQ_API_KEY) {
+      console.log('GROQ_API_KEY environment variable is missing');
       return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
     }
 
@@ -36,6 +41,8 @@ RESPONSE STRUCTURE:
 1) Provide a detailed description (2-3 sentences)
 2) List 8-10 relevant content tags separated by commas
 3) Describe the mood and tone of the image (1 sentence)`;
+
+    console.log('Making request to Groq API...');
 
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
@@ -58,15 +65,37 @@ RESPONSE STRUCTURE:
         headers: {
           'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 25000
       }
     );
 
+    console.log('Groq API response received successfully');
     return res.status(200).json(response.data);
+
   } catch (error) {
-    console.error('Image Analysis API Error:', error.response?.data || error.message);
+    console.error('Detailed error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      code: error.code
+    });
+
+    if (error.code === 'ECONNABORTED') {
+      return res.status(408).json({ error: 'Request timeout' });
+    }
+
+    if (error.response?.status === 401) {
+      return res.status(500).json({ error: 'Invalid API key configuration' });
+    }
+
+    if (error.response?.status === 429) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+
     return res.status(500).json({
-      error: error.response?.data?.error?.message || error.message || 'Failed to analyze image'
+      error: error.response?.data?.error?.message || error.message || 'Failed to analyze image',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }

@@ -4,9 +4,13 @@
   "description": "AI-powered image search engine",
   "main": "index.html",
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.2"
+  },
+  "engines": {
+    "node": "18.x"
   },
   "scripts": {
-    "build": "echo 'No build step required'"
+    "build": "echo 'Static site - no build required'",
+    "start": "echo 'Static site'"
   }
 }
