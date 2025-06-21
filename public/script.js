@@ -693,44 +693,70 @@ function displayEnhancedAnalysis(analysis, container) {
 async function analyzeImageColors(imageUrl, colorCount = 6) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "Anonymous"; // Needed for CORS images
+    img.crossOrigin = "Anonymous";
 
     img.onload = function () {
-      // Draw image to canvas
+      // Create canvas
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      
+      // Resize image for better performance and color sampling
+      const maxSize = 200;
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       // Get pixel data
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
 
-      // Count colors
+      // Sample colors more intelligently - skip very dark/light pixels
       const colorMap = {};
       let totalPixels = 0;
+      const skipStep = 4; // Sample every 4th pixel for performance
 
-      for (let i = 0; i < data.length; i += 4) {
-        // Ignore fully transparent pixels
-        if (data[i + 3] < 128) continue;
-        const rgb = [data[i], data[i + 1], data[i + 2]];
-        const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+      for (let i = 0; i < data.length; i += 4 * skipStep) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        // Skip transparent pixels
+        if (a < 128) continue;
+        
+        // Skip very dark pixels (shadows, blacks)
+        const brightness = (r + g + b) / 3;
+        if (brightness < 30) continue;
+        
+        // Skip very light pixels (overexposed whites)
+        if (brightness > 240) continue;
+        
+        // Group similar colors together (reduce precision)
+        const groupedR = Math.floor(r / 25) * 25;
+        const groupedG = Math.floor(g / 25) * 25;
+        const groupedB = Math.floor(b / 25) * 25;
+        
+        const hex = rgbToHex(groupedR, groupedG, groupedB);
         colorMap[hex] = (colorMap[hex] || 0) + 1;
         totalPixels++;
       }
 
-      // Sort colors by frequency
-      const sortedColors = Object.entries(colorMap)
+      // Filter out colors that appear less than 2% of the time
+      const minThreshold = totalPixels * 0.02;
+      const filteredColors = Object.entries(colorMap)
+        .filter(([hex, count]) => count >= minThreshold)
         .sort((a, b) => b[1] - a[1])
         .slice(0, colorCount);
 
-      // Format as array of { hex, percentage }
-      const result = sortedColors.map(([hex, count]) => ({
+      // Format result
+      const result = filteredColors.map(([hex, count]) => ({
         hex,
         percentage: ((count / totalPixels) * 100).toFixed(1) + '%'
       }));
 
+      console.log('🎨 Extracted colors:', result);
       resolve(result);
     };
 
@@ -740,6 +766,14 @@ async function analyzeImageColors(imageUrl, colorCount = 6) {
 
     img.src = imageUrl;
   });
+}
+
+// Helper: Convert RGB to HEX (updated for better accuracy)
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map(x => {
+    const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  }).join("");
 }
 
 // Helper: Convert RGB to HEX
