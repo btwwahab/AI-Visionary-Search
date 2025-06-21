@@ -185,7 +185,7 @@ async function shareImage() {
     // Get the current image URL and title
     const imageUrl = modalImage.src;
     const imageTitle = modalTitle.textContent.trim();
-    
+
     // Show sharing status in modal
     const originalText = modalShare.innerHTML;
     modalShare.innerHTML = `
@@ -194,7 +194,7 @@ async function shareImage() {
       </svg>
       Sharing...
     `;
-    
+
     // Check if Web Share API is available
     if (navigator.share) {
       await navigator.share({
@@ -202,10 +202,10 @@ async function shareImage() {
         text: imageTitle,
         url: imageUrl
       });
-      
+
       // Reset button
       modalShare.innerHTML = originalText;
-      
+
       // Add message to chat if chat panel is open
       if (aiChatPanel.classList.contains("active")) {
         setTimeout(() => {
@@ -215,7 +215,7 @@ async function shareImage() {
     } else {
       // Fallback to copying to clipboard
       await navigator.clipboard.writeText(imageUrl);
-      
+
       // Show success message
       modalShare.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -223,12 +223,12 @@ async function shareImage() {
         </svg>
         Copied!
       `;
-      
+
       // Reset button after delay
       setTimeout(() => {
         modalShare.innerHTML = originalText;
       }, 2000);
-      
+
       // Add message to chat if chat panel is open
       if (aiChatPanel.classList.contains("active")) {
         setTimeout(() => {
@@ -238,7 +238,7 @@ async function shareImage() {
     }
   } catch (error) {
     console.error('Share failed:', error);
-    
+
     // Show error
     modalShare.innerHTML = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -246,12 +246,12 @@ async function shareImage() {
       </svg>
       Failed
     `;
-    
+
     // Reset button after delay
     setTimeout(() => {
       modalShare.innerHTML = originalText;
     }, 2000);
-    
+
     // Add error message to chat if chat panel is open
     if (aiChatPanel.classList.contains("active")) {
       addAIMessage("I couldn't share the image. There might be permission restrictions or your browser doesn't support sharing.");
@@ -349,13 +349,13 @@ function displayImages(results) {
     image.alt = result.alt_description || "Unsplash Image";
     image.classList.add("result-img");
     image.dataset.full = result.urls.full;
-    
+
     // Store the best available description
-    const bestDescription = result.description || 
-                           result.alt_description || 
-                           `Photo by ${result.user.name}` ||
-                           "Beautiful image from Unsplash";
-    
+    const bestDescription = result.description ||
+      result.alt_description ||
+      `Photo by ${result.user.name}` ||
+      "Beautiful image from Unsplash";
+
     image.dataset.description = bestDescription;
     image.dataset.width = result.width;
     image.dataset.height = result.height;
@@ -603,7 +603,7 @@ async function openImageModal(image) {
   modalTitle.textContent = image.dataset.description || "Beautiful Image";
   modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
   modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
-  
+
   // Show modal
   imageModal.classList.add('active');
   document.body.classList.add('modal-open');
@@ -624,19 +624,19 @@ async function performAIAnalysisWithDescription(imageUrl, contentContainer, load
 
     // Enhance the Unsplash description using Groq
     let enhancedDescription = unsplashDescription || "Image from Unsplash collection";
-    
+
     if (unsplashDescription && unsplashDescription.length > 5) {
       try {
         console.log('🤖 Enhancing description with Groq:', unsplashDescription);
-        
+
         const response = await fetch('/api/agent', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             unsplashDescription: unsplashDescription,
-            imageUrl: imageUrl 
+            imageUrl: imageUrl
           })
         });
 
@@ -658,10 +658,10 @@ async function performAIAnalysisWithDescription(imageUrl, contentContainer, load
     loadingContainer.style.display = 'none';
 
     // Display the analysis (enhanced description + real colors)
-    displayEnhancedAnalysis({ 
-      description: enhancedDescription, 
+    displayEnhancedAnalysis({
+      description: enhancedDescription,
       colorPalette: colorPalette,
-      originalDescription: unsplashDescription 
+      originalDescription: unsplashDescription
     }, contentContainer);
 
   } catch (error) {
@@ -700,7 +700,7 @@ async function openImageModal(image) {
   modalTitle.textContent = image.dataset.description || "Beautiful Image";
   modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
   modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
-  
+
   // Show modal
   imageModal.classList.add('active');
   document.body.classList.add('modal-open');
@@ -729,7 +729,7 @@ function displayEnhancedAnalysis(analysis, container) {
     colorPaletteHTML = `<div class="color-error">No colors could be extracted from this image.</div>`;
   }
 
-  // Set the container HTML
+  // Set the container HTML - removed original description section
   container.innerHTML = `
     <div class="enhanced-analysis-container">
       <div class="analysis-section">
@@ -737,16 +737,10 @@ function displayEnhancedAnalysis(analysis, container) {
           <span class="section-icon">🖼️</span>
           <h5 class="section-title">Enhanced Description</h5>
           <small style="opacity: 0.7; font-size: 0.75rem;">
-            Based on Unsplash data, enhanced by AI
+            AI-enhanced description based on image content
           </small>
         </div>
         <p class="analysis-text">${analysis.description || 'No description available.'}</p>
-        ${analysis.originalDescription && analysis.originalDescription !== analysis.description ? 
-          `<details style="margin-top: 8px; opacity: 0.8;">
-            <summary style="cursor: pointer; font-size: 0.8rem; color: #888;">Original Unsplash Description</summary>
-            <p style="font-size: 0.8rem; margin: 4px 0 0 16px; font-style: italic;">${analysis.originalDescription}</p>
-          </details>` : ''
-        }
       </div>
       <div class="analysis-section">
         <div class="section-header">
@@ -773,13 +767,13 @@ async function analyzeImageColors(imageUrl, colorCount = 6) {
       // Create canvas
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       // Resize image for better performance and color sampling
       const maxSize = 200;
       const ratio = Math.min(maxSize / img.width, maxSize / img.height);
       canvas.width = img.width * ratio;
       canvas.height = img.height * ratio;
-      
+
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       // Get pixel data
@@ -796,22 +790,22 @@ async function analyzeImageColors(imageUrl, colorCount = 6) {
         const g = data[i + 1];
         const b = data[i + 2];
         const a = data[i + 3];
-        
+
         // Skip transparent pixels
         if (a < 128) continue;
-        
+
         // Skip very dark pixels (shadows, blacks)
         const brightness = (r + g + b) / 3;
         if (brightness < 30) continue;
-        
+
         // Skip very light pixels (overexposed whites)
         if (brightness > 240) continue;
-        
+
         // Group similar colors together (reduce precision)
         const groupedR = Math.floor(r / 25) * 25;
         const groupedG = Math.floor(g / 25) * 25;
         const groupedB = Math.floor(b / 25) * 25;
-        
+
         const hex = rgbToHex(groupedR, groupedG, groupedB);
         colorMap[hex] = (colorMap[hex] || 0) + 1;
         totalPixels++;
@@ -867,17 +861,17 @@ function rgbToHex(r, g, b) {
 async function copyColorToClipboard(hexColor) {
   try {
     await navigator.clipboard.writeText(hexColor);
-    
+
     // Show success feedback
     showColorCopyFeedback(hexColor);
-    
+
     // Add to chat if open
     if (aiChatPanel.classList.contains("active")) {
       addAIMessage(`I've copied the color ${hexColor} to your clipboard!`);
     }
   } catch (error) {
     console.error('Failed to copy color:', error);
-    
+
     // Fallback: create temporary input element
     const tempInput = document.createElement('input');
     tempInput.value = hexColor;
@@ -885,7 +879,7 @@ async function copyColorToClipboard(hexColor) {
     tempInput.select();
     document.execCommand('copy');
     document.body.removeChild(tempInput);
-    
+
     showColorCopyFeedback(hexColor);
   }
 }
@@ -910,7 +904,7 @@ function showColorCopyFeedback(hexColor) {
     animation: colorCopyPulse 0.6s ease-out;
   `;
   feedback.textContent = `${hexColor} copied!`;
-  
+
   // Add animation keyframes if not already added
   if (!document.querySelector('#colorCopyAnimation')) {
     const style = document.createElement('style');
@@ -924,9 +918,9 @@ function showColorCopyFeedback(hexColor) {
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(feedback);
-  
+
   // Remove after animation
   setTimeout(() => {
     feedback.remove();
@@ -939,10 +933,10 @@ function getContrastColor(hexColor) {
   const r = parseInt(hexColor.slice(1, 3), 16);
   const g = parseInt(hexColor.slice(3, 5), 16);
   const b = parseInt(hexColor.slice(5, 7), 16);
-  
+
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
@@ -951,12 +945,12 @@ function searchByTag(tag) {
   searchBox.value = tag;
   page = 1;
   searchImages();
-  
+
   // Close modal if open
   if (imageModal.classList.contains('active')) {
     closeImageModal();
   }
-  
+
   // Add to chat if open
   if (aiChatPanel.classList.contains("active")) {
     addAIMessage(`Searching for images related to "${tag}".`);
@@ -969,7 +963,7 @@ function generateRandomColor() {
   const hue = Math.floor(Math.random() * 360);
   const saturation = Math.floor(Math.random() * 50) + 50; // 50-100%
   const lightness = Math.floor(Math.random() * 40) + 30;  // 30-70%
-  
+
   // Convert HSL to hex
   return hslToHex(hue, saturation, lightness);
 }
@@ -1226,123 +1220,123 @@ function renderCategories() {
 
 // Enhanced animateMetrics function
 function animateMetrics() {
-    const metricCards = document.querySelectorAll('.metric-card');
-    const metricProgress = document.querySelectorAll('.metric-progress');
-    
-    // Animate metrics with delay
-    metricProgress.forEach((circle, index) => {
-        const offset = circle.getAttribute('stroke-dashoffset');
-        
-        // Start with full circle
-        circle.style.strokeDashoffset = "339.29";
-        
-        // Animate with staggered delay
-        setTimeout(() => {
+  const metricCards = document.querySelectorAll('.metric-card');
+  const metricProgress = document.querySelectorAll('.metric-progress');
+
+  // Animate metrics with delay
+  metricProgress.forEach((circle, index) => {
+    const offset = circle.getAttribute('stroke-dashoffset');
+
+    // Start with full circle
+    circle.style.strokeDashoffset = "339.29";
+
+    // Animate with staggered delay
+    setTimeout(() => {
+      circle.style.transition = "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)";
+      circle.style.strokeDashoffset = offset || "0";
+
+      // Also animate the value with counting effect
+      const valueEl = metricCards[index].querySelector('.metric-value');
+      const finalValue = valueEl.textContent;
+
+      // Handle different formats (numbers, percentages, or text with units)
+      if (finalValue.includes('%')) {
+        animateCounterPercent(valueEl, parseFloat(finalValue));
+      } else if (finalValue.includes('s')) {
+        animateCounterSeconds(valueEl, parseFloat(finalValue));
+      } else if (finalValue.includes('M+')) {
+        animateCounterMillions(valueEl, parseInt(finalValue));
+      } else {
+        // Generic number counter
+        animateCounter(valueEl, parseInt(finalValue));
+      }
+    }, 300 + (index * 300));
+  });
+
+  // Add intersection observer for re-animation when scrolled into view
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        metricProgress.forEach((circle, index) => {
+          const offset = circle.getAttribute('stroke-dashoffset');
+
+          // Reset and animate again
+          circle.style.transition = "none";
+          circle.style.strokeDashoffset = "339.29";
+
+          setTimeout(() => {
             circle.style.transition = "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)";
             circle.style.strokeDashoffset = offset || "0";
-            
-            // Also animate the value with counting effect
-            const valueEl = metricCards[index].querySelector('.metric-value');
-            const finalValue = valueEl.textContent;
-            
-            // Handle different formats (numbers, percentages, or text with units)
-            if (finalValue.includes('%')) {
-                animateCounterPercent(valueEl, parseFloat(finalValue));
-            } else if (finalValue.includes('s')) {
-                animateCounterSeconds(valueEl, parseFloat(finalValue));
-            } else if (finalValue.includes('M+')) {
-                animateCounterMillions(valueEl, parseInt(finalValue));
-            } else {
-                // Generic number counter
-                animateCounter(valueEl, parseInt(finalValue));
-            }
-        }, 300 + (index * 300));
-    });
-    
-    // Add intersection observer for re-animation when scrolled into view
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                metricProgress.forEach((circle, index) => {
-                    const offset = circle.getAttribute('stroke-dashoffset');
-                    
-                    // Reset and animate again
-                    circle.style.transition = "none";
-                    circle.style.strokeDashoffset = "339.29";
-                    
-                    setTimeout(() => {
-                        circle.style.transition = "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)";
-                        circle.style.strokeDashoffset = offset || "0";
-                    }, 50);
-                });
-            }
+          }, 50);
         });
-    }, { threshold: 0.2 });
-    
-    // Observe the metrics section
-    const metricsSection = document.querySelector('.ai-metrics');
-    if (metricsSection) observer.observe(metricsSection);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  // Observe the metrics section
+  const metricsSection = document.querySelector('.ai-metrics');
+  if (metricsSection) observer.observe(metricsSection);
 }
 
 // Helper functions for counter animations
 function animateCounterPercent(element, target) {
-    let start = 0;
-    const duration = 1500;
-    const startTime = performance.now();
-    
-    function update(currentTime) {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / duration, 1);
-        const value = progress * target;
-        
-        element.textContent = value.toFixed(1) + '%';
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+  let start = 0;
+  const duration = 1500;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsedTime = currentTime - startTime;
+    const progress = Math.min(elapsedTime / duration, 1);
+    const value = progress * target;
+
+    element.textContent = value.toFixed(1) + '%';
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
     }
-    
-    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
 }
 
 function animateCounterSeconds(element, target) {
-    let start = 1.0;
-    const duration = 1500;
-    const startTime = performance.now();
-    
-    function update(currentTime) {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / duration, 1);
-        const value = start - (progress * (start - target));
-        
-        element.textContent = value.toFixed(1) + 's';
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+  let start = 1.0;
+  const duration = 1500;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsedTime = currentTime - startTime;
+    const progress = Math.min(elapsedTime / duration, 1);
+    const value = start - (progress * (start - target));
+
+    element.textContent = value.toFixed(1) + 's';
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
     }
-    
-    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
 }
 
 function animateCounterMillions(element, target) {
-    let start = 0;
-    const duration = 1500;
-    const startTime = performance.now();
-    
-    function update(currentTime) {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / duration, 1);
-        const value = Math.floor(progress * target);
-        
-        element.textContent = value + 'M+';
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+  let start = 0;
+  const duration = 1500;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsedTime = currentTime - startTime;
+    const progress = Math.min(elapsedTime / duration, 1);
+    const value = Math.floor(progress * target);
+
+    element.textContent = value + 'M+';
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
     }
-    
-    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
 }
 
 // Add this function to your script.js file
@@ -1352,19 +1346,19 @@ function calculateAspectRatio(width, height) {
   // Convert to numbers
   width = parseInt(width);
   height = parseInt(height);
-  
+
   // Find the greatest common divisor (GCD) using Euclidean algorithm
   function gcd(a, b) {
     return b === 0 ? a : gcd(b, a % b);
   }
-  
+
   // Calculate the GCD to simplify the ratio
   const divisor = gcd(width, height);
-  
+
   // Calculate simplified ratio
   const ratioWidth = width / divisor;
   const ratioHeight = height / divisor;
-  
+
   // Return as string in format "16:9"
   return `${ratioWidth}:${ratioHeight}`;
 }
