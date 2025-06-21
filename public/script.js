@@ -579,99 +579,163 @@ function showAISearchAnimation() {
 
 // Open image modal
 async function openImageModal(image) {
-  const src = image.src;
-  const title = image.dataset.title || 'Untitled Image';
-  const photographer = image.dataset.photographer || 'Unknown Photographer';
-  const width = image.dataset.width || '1000';
-  const height = image.dataset.height || '1000';
-  const resolution = `${width}px × ${height}px`;
-  const aspectRatio = calculateAspectRatio(width, height);
-  
-  modalImage.src = src;
-  modalTitle.textContent = title;
-  modalResolution.textContent = resolution;
-  modalAspect.textContent = aspectRatio;
-  modalDownload.setAttribute('data-url', src);
-  modalShare.setAttribute('data-url', src);
-  modalShare.setAttribute('data-title', title);
+  const imageModal = document.getElementById('image-modal');
+  const modalImage = document.getElementById('modal-image');
+  const modalTitle = document.getElementById('modal-title');
+  const modalResolution = document.getElementById('modal-resolution');
+  const modalAspect = document.getElementById('modal-aspect');
+  const analysisContent = document.getElementById('analysis-content');
+  const analysisLoading = document.getElementById('analysis-loading');
+
+  // Set image data
+  modalImage.src = image.dataset.full;
+  modalTitle.textContent = image.dataset.description || "Beautiful Image";
+  modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
+  modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
   
   // Show modal
   imageModal.classList.add('active');
   document.body.classList.add('modal-open');
-  
-  // Add AI analysis section if it doesn't exist
-  let aiAnalysisSection = document.getElementById('ai-analysis');
-  if (!aiAnalysisSection) {
-    const modalInfo = document.querySelector('.modal-info') || document.querySelector('.modal-content');
-    if (modalInfo) {
-      aiAnalysisSection = document.createElement('div');
-      aiAnalysisSection.id = 'ai-analysis';
-      aiAnalysisSection.className = 'modal-section';
-      modalInfo.appendChild(aiAnalysisSection);
+
+  // Start AI analysis
+  await performAIAnalysis(image.src, analysisContent, analysisLoading);
+}
+
+// Enhanced AI analysis function
+async function performAIAnalysis(imageUrl, contentContainer, loadingContainer) {
+  try {
+    // Show loading state
+    loadingContainer.style.display = 'flex';
+    contentContainer.innerHTML = '';
+
+    // Use the GroqService for analysis
+    if (window.GroqService) {
+      const groqService = new window.GroqService();
+      const analysis = await groqService.analyzeImage(imageUrl);
+      
+      // Hide loading
+      loadingContainer.style.display = 'none';
+      
+      // Display the analysis
+      displayEnhancedAnalysis(analysis, contentContainer);
+    } else {
+      throw new Error('Analysis service not available');
     }
-  }
-  
-  // Show loading state in AI analysis section (moved after initialization)
-  if (aiAnalysisSection) {
-    aiAnalysisSection.innerHTML = `
-      <h4 class="modal-section-title">AI Analysis</h4>
-      <div class="analysis-loading">
-        <div class="loader-ring"><div class="loader-circle"></div></div>
-        <div class="loader-text">AI analyzing image...</div>
+  } catch (error) {
+    console.error('Analysis failed:', error);
+    loadingContainer.style.display = 'none';
+    contentContainer.innerHTML = `
+      <div class="analysis-error">
+        <div class="error-message">❌ Unable to analyze this image</div>
+        <div class="error-message">${error.message}</div>
       </div>
-      <div class="analysis-content" style="display: none;"></div>
     `;
   }
-  
-  // Analyze image with groqService
-  if (window.groqService && aiAnalysisSection) {
-    try {
-      const imageDescription = image.alt || image.dataset.description || '';
-      const analysis = await window.groqService.analyzeImage(src, imageDescription);
+}
+
+// Function to display enhanced analysis with better styling
+function displayEnhancedAnalysis(analysis, container) {
+  // Create color palette HTML with improved styling
+  const colorPaletteHTML = analysis.colorPalette ? analysis.colorPalette.map(color => `
+    <div class="enhanced-color-swatch" style="background-color: ${color.hex};" title="${color.hex} (${color.percentage})">
+      <div class="color-info">
+        <div class="color-hex">${color.hex}</div>
+        <div class="color-percent">${color.percentage}</div>
+      </div>
+    </div>
+  `).join('') : '';
+
+  // Create tags HTML with improved styling
+  const tagsHTML = analysis.tags ? analysis.tags.map(tag => `
+    <span class="enhanced-ai-tag">${tag}</span>
+  `).join('') : '';
+
+  container.innerHTML = `
+    <div class="enhanced-analysis-container">
       
-      // Update UI with analysis results
-      const loadingElement = aiAnalysisSection.querySelector('.analysis-loading');
-      const contentElement = aiAnalysisSection.querySelector('.analysis-content');
-      
-      if (loadingElement) loadingElement.style.display = 'none';
-      if (contentElement) {
-        contentElement.style.display = 'block';
-        contentElement.innerHTML = `
-          <div class="analysis-item">
-            <span class="analysis-label">AI Description</span>
-            <p class="analysis-text">${analysis.description}</p>
-          </div>
-          <div class="analysis-item">
-            <span class="analysis-label">Content Tags</span>
-            <div class="tag-cloud">
-              ${analysis.tags.map(tag => `<span class="ai-tag">${tag}</span>`).join('')}
-            </div>
-          </div>
-          <div class="analysis-item">
-            <span class="analysis-label">Mood & Tone</span>
-            <p class="analysis-text">${analysis.mood}</p>
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      
-      // Show error message
-      const loadingElement = aiAnalysisSection.querySelector('.analysis-loading');
-      const contentElement = aiAnalysisSection.querySelector('.analysis-content');
-      
-      if (loadingElement) loadingElement.style.display = 'none';
-      if (contentElement) {
-        contentElement.style.display = 'block';
-        contentElement.innerHTML = `
-          <div class="analysis-error">
-            <p>Unable to analyze this image at the moment.</p>
-            <p class="error-message">Please try again later.</p>
-          </div>
-        `;
-      }
-    }
-  }
+      <!-- Visual Description -->
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🖼️</span>
+          <h5 class="section-title">Visual Description</h5>
+        </div>
+        <p class="analysis-text">${analysis.description || 'A beautiful and detailed image.'}</p>
+      </div>
+
+      <!-- Tags -->
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🏷️</span>
+          <h5 class="section-title">Content Tags</h5>
+        </div>
+        <div class="enhanced-tag-cloud">
+          ${tagsHTML}
+        </div>
+      </div>
+
+      <!-- Mood & Atmosphere -->
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🎭</span>
+          <h5 class="section-title">Mood & Atmosphere</h5>
+        </div>
+        <p class="analysis-text">${analysis.mood || 'A captivating atmosphere with rich emotional depth.'}</p>
+      </div>
+
+      <!-- Color Palette -->
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🎨</span>
+          <h5 class="section-title">Color Palette</h5>
+        </div>
+        <div class="enhanced-color-palette">
+          ${colorPaletteHTML}
+        </div>
+      </div>
+
+      <!-- Additional Analysis -->
+      ${analysis.composition ? `
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">📐</span>
+          <h5 class="section-title">Composition</h5>
+        </div>
+        <p class="analysis-text">${analysis.composition}</p>
+      </div>
+      ` : ''}
+
+      ${analysis.artisticStyle ? `
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🎯</span>
+          <h5 class="section-title">Artistic Style</h5>
+        </div>
+        <p class="analysis-text">${analysis.artisticStyle}</p>
+      </div>
+      ` : ''}
+
+      ${analysis.technicalQuality ? `
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">⭐</span>
+          <h5 class="section-title">Technical Quality</h5>
+        </div>
+        <p class="analysis-text">${analysis.technicalQuality}</p>
+      </div>
+      ` : ''}
+
+      ${analysis.notableElements ? `
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🔍</span>
+          <h5 class="section-title">Notable Elements</h5>
+        </div>
+        <p class="analysis-text">${analysis.notableElements}</p>
+      </div>
+      ` : ''}
+
+    </div>
+  `;
 }
 
 // Close image modal

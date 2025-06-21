@@ -3060,78 +3060,198 @@ h1 {
     }
 }
 
-/* Add to your styles.css file */
-
-/* AI Analysis Styles */
-#ai-analysis {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* Enhanced AI Analysis Styles */
+.enhanced-analysis-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 5px;
 }
 
-.modal-section-title {
-  color: #00e5ff;
-  margin-bottom: 15px;
+.analysis-section {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(0, 229, 255, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid rgba(0, 229, 255, 0.3);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-icon {
   font-size: 1.1rem;
-  font-weight: 500;
+  margin-right: 8px;
 }
 
-.analysis-item {
-  margin-bottom: 15px;
-}
-
-.analysis-label {
-  display: block;
+.section-title {
+  font-size: 0.9rem;
   font-weight: 600;
-  margin-bottom: 5px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--secondary-color);
+  margin: 0;
 }
 
 .analysis-text {
-  margin: 0;
+  font-size: 0.85rem;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.9);
+  margin: 0;
 }
 
-.tag-cloud {
+/* Enhanced Color Palette */
+.enhanced-color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.enhanced-color-swatch {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.enhanced-color-swatch:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.color-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 4px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.enhanced-color-swatch:hover .color-info {
+  transform: translateY(0);
+}
+
+.color-hex {
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+  line-height: 1;
+}
+
+.color-percent {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 1;
+}
+
+/* Enhanced Tags */
+.enhanced-tag-cloud {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 5px;
+  margin-top: 8px;
 }
 
-.ai-tag {
-  background: rgba(0, 229, 255, 0.1);
+.enhanced-ai-tag {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(6, 102, 255, 0.15));
+  border: 1px solid rgba(0, 229, 255, 0.3);
   padding: 4px 10px;
   border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--secondary-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.enhanced-ai-tag:hover {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(6, 102, 255, 0.25));
+  border-color: var(--secondary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.3);
+}
+
+/* Loading Animation */
+.analysis-loading {
+  text-align: center;
+  padding: 30px 0;
+}
+
+.analysis-loading .loader-ring {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 15px;
+}
+
+.analysis-loading .loader-circle {
+  border-width: 2px;
+}
+
+.analysis-loading .loader-text {
+  color: var(--secondary-color);
   font-size: 0.85rem;
-  color: #00e5ff;
-  transition: background 0.2s ease;
+  margin-top: 10px;
 }
 
-.ai-tag:hover {
-  background: rgba(0, 229, 255, 0.2);
-}
-
+/* Error State */
 .analysis-error {
+  text-align: center;
+  padding: 20px;
   color: #ff6b6b;
 }
 
 .error-message {
-  font-size: 0.9rem;
-  opacity: 0.8;
+  font-size: 0.85rem;
+  margin: 5px 0;
 }
 
-.analysis-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 0;
+/* Scrollbar for analysis container */
+.enhanced-analysis-container::-webkit-scrollbar {
+  width: 4px;
 }
 
-.loader-text {
-  margin-top: 15px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
+.enhanced-analysis-container::-webkit-scrollbar-track {
+  background: rgba(0, 229, 255, 0.05);
+  border-radius: 2px;
+}
+
+.enhanced-analysis-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 2px;
+}
+
+.enhanced-analysis-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .analysis-section {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .enhanced-color-swatch {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .section-title {
+    font-size: 0.85rem;
+  }
+  
+  .analysis-text {
+    font-size: 0.8rem;
+  }
 }

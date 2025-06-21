@@ -282,33 +282,15 @@
             </div>
           </div>
           <div class="ai-analysis" id="ai-analysis">
-            <h4>AI Analysis</h4>
-            <div class="analysis-details">
-              <div class="analysis-item">
-                <span class="analysis-label">Dominant Colors</span>
-                <div class="color-palette">
-                  <div
-                    class="color-swatch"
-                    style="background-color: #3b82f6"
-                  ></div>
-                  <div
-                    class="color-swatch"
-                    style="background-color: #10b981"
-                  ></div>
-                  <div
-                    class="color-swatch"
-                    style="background-color: #f59e0b"
-                  ></div>
-                </div>
+            <h4 class="modal-section-title">🤖 AI Analysis</h4>
+            <div class="analysis-loading" id="analysis-loading" style="display: none;">
+              <div class="loader-ring">
+                <div class="loader-circle"></div>
               </div>
-              <div class="analysis-item">
-                <span class="analysis-label">Image Style</span>
-                <span class="analysis-value">Photography</span>
-              </div>
-              <div class="analysis-item">
-                <span class="analysis-label">Composition</span>
-                <span class="analysis-value">Rule of Thirds</span>
-              </div>
+              <div class="loader-text">Analyzing image...</div>
+            </div>
+            <div class="analysis-content" id="analysis-content">
+              <!-- Dynamic content will be inserted here -->
             </div>
           </div>
           <div class="modal-actions">
