@@ -3063,8 +3063,7 @@ h1 {
 }
 
 .enhanced-analysis-container {
-    max-height: 400px;
-    overflow-y: auto;
+    height: auto;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -3178,15 +3177,6 @@ h1 {
     padding: 20px;
     color: #ff6b6b;
     font-size: 0.9rem;
-}
-
-/* Modal info adjustments to accommodate content without scrolling */
-.modal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    overflow: hidden;
-    /* Prevent scrolling */
 }
 
 .ai-analysis {
