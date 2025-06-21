@@ -600,7 +600,7 @@ async function openImageModal(image) {
 
   // Set image data
   modalImage.src = image.dataset.full;
-  modalTitle.textContent = image.dataset.description || "Beautiful Image";
+  // modalTitle.textContent = image.dataset.description || "Beautiful Image";
   modalResolution.textContent = `${image.dataset.width} x ${image.dataset.height}`;
   modalAspect.textContent = calculateAspectRatio(image.dataset.width, image.dataset.height);
 
@@ -661,7 +661,7 @@ async function performAIAnalysisWithDescription(imageUrl, contentContainer, load
     displayEnhancedAnalysis({
       description: enhancedDescription,
       colorPalette: colorPalette,
-      originalDescription: unsplashDescription
+      // originalDescription: unsplashDescription
     }, contentContainer);
 
   } catch (error) {
@@ -732,7 +732,16 @@ function displayEnhancedAnalysis(analysis, container) {
   // Set the container HTML - removed original description section
   container.innerHTML = `
     <div class="enhanced-analysis-container">
-      
+      <div class="analysis-section">
+        <div class="section-header">
+          <span class="section-icon">🖼️</span>
+          <h5 class="section-title">Enhanced Description</h5>
+          <small style="opacity: 0.7; font-size: 0.75rem;">
+            AI-enhanced description based on image content
+          </small>
+        </div>
+        <p class="analysis-text">${analysis.description || 'No description available.'}</p>
+      </div>
       <div class="analysis-section">
         <div class="section-header">
           <span class="section-icon">🎨</span>
