@@ -43,39 +43,41 @@ export default async function handler(req, res) {
       messages: [
         {
           role: "system",
-          content: `You are an expert AI image analyst with expertise in visual composition, color theory, and artistic elements. Provide a comprehensive analysis in this exact format:
+          content: `You are an expert AI image analyst. Analyze the image and provide a response in EXACTLY this format with proper spacing:
 
 🎨 VISUAL DESCRIPTION:
-[2-3 detailed sentences describing what you see, including subjects, setting, lighting, and overall composition]
+[Write 2-3 detailed sentences describing what you see in the image - subjects, setting, lighting, composition, colors, mood]
 
 🏷️ CONTENT TAGS:
-[10-12 specific, relevant tags separated by commas - include objects, style, mood, technique]
+[List 8-10 relevant tags separated by commas - include objects, style, mood, colors, technique. Example: landscape, mountains, sunset, golden hour, peaceful, serene, nature, photography]
 
 🎭 MOOD & ATMOSPHERE:
-[1-2 sentences describing the emotional tone, atmosphere, and feeling the image conveys]
+[Write 1-2 sentences describing the emotional tone and atmosphere the image conveys]
 
 🎨 COLOR PALETTE:
-[List 5-6 dominant colors in HEX format with their approximate percentages, e.g., "#2563eb (25%), #10b981 (20%), #f59e0b (15%)"]
+[List 5-6 actual hex color codes with percentages in this exact format: #FF6B6B (25%), #4ECDC4 (20%), #45B7D1 (18%), #96CEB4 (15%), #FFEAA7 (12%), #DDA0DD (10%)]
 
 📐 COMPOSITION ANALYSIS:
-[Brief analysis of composition techniques used - rule of thirds, leading lines, symmetry, etc.]
+[Describe composition techniques like rule of thirds, leading lines, symmetry, depth of field, framing]
 
 🎯 ARTISTIC STYLE:
-[Identify the artistic style/genre - photography, digital art, painting, illustration, etc.]
+[Identify the style - photography, digital art, painting, illustration, realistic, abstract, etc.]
 
 ⭐ TECHNICAL QUALITY:
-[Brief assessment of lighting, focus, exposure, and overall technical execution]
+[Assess lighting, focus, exposure, resolution, and overall technical execution]
 
 🔍 NOTABLE ELEMENTS:
-[Highlight 2-3 interesting or unique aspects that make this image stand out]`
+[Highlight 2-3 unique or interesting aspects that make this image stand out]
+
+IMPORTANT: Use real hex color codes that match the actual colors you see in the image. Ensure each section has proper content and spacing.`
         },
         {
           role: "user",
-          content: `Analyze this image comprehensively: ${imageUrl}\nExisting description: ${imageDescription || 'No prior description available'}`
+          content: `Please analyze this image in detail: ${imageUrl}`
         }
       ],
-      temperature: 0.7,
-      max_tokens: 800
+      temperature: 0.3,
+      max_tokens: 1000
     };
     
     const response = await fetch(API_URL, {
@@ -97,39 +99,8 @@ export default async function handler(req, res) {
     }
     
     const data = await response.json();
+    console.log('Groq API Response:', JSON.stringify(data, null, 2));
     
-    // Enhance the response with structured data
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      const content = data.choices[0].message.content;
-      
-      // Extract color palette information
-      const colorMatch = content.match(/🎨 COLOR PALETTE:\s*\n(.*?)(?=\n\n|\n📐|$)/s);
-      let colorPalette = [];
-      
-      if (colorMatch) {
-        const colorText = colorMatch[1];
-        // Extract hex colors and percentages
-        const colorMatches = colorText.match(/#[0-9a-fA-F]{6}\s*\(\d+%\)/g);
-        if (colorMatches) {
-          colorPalette = colorMatches.map(match => {
-            const [hex, percentage] = match.split(/\s*\(/);
-            return {
-              hex: hex.trim(),
-              percentage: percentage.replace(')', '').trim()
-            };
-          });
-        }
-      }
-      
-      // Add structured data to response
-      data.structuredAnalysis = {
-        colorPalette,
-        timestamp: new Date().toISOString(),
-        analysisVersion: '2.0'
-      };
-    }
-    
-    console.log('Comprehensive image analysis completed successfully');
     return res.status(200).json(data);
     
   } catch (error) {
