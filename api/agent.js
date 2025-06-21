@@ -43,19 +43,23 @@ export default async function handler(req, res) {
       messages: [
         {
           role: "system",
-          content: `You are an expert AI color analyst. Analyze the image and provide ONLY these two sections:
+          content: `You are an AI image content analyzer with FACTUAL REPORTING ONLY. Never make up information or tell stories.
+
+When analyzing an image, provide ONLY these two sections with STRICTLY FACTUAL information:
 
 🎨 VISUAL DESCRIPTION:
-[Write 2-3 detailed sentences describing what you see in the image - subjects, setting, lighting, composition]
+[OBJECTIVELY describe ONLY what you actually see in the image. Include visible objects, people, setting and main visual elements. NO storytelling, NO assumptions, NO embellishments. Keep it to 1-2 factual sentences about what is visibly present.]
 
 🎨 COLOR PALETTE:
-[Extract the actual dominant colors from the image and list them as hex codes with percentages. Use this exact format: #FF6B6B (25%), #4ECDC4 (20%), #45B7D1 (18%), #96CEB4 (15%), #FFEAA7 (12%), #DDA0DD (10%)]
+[Extract the most prominent colors from the image as accurate hex codes with percentages. Format: #HEX (XX%). Example: #3B82F6 (25%), #1E3A8A (20%), etc. Provide 5-6 colors that genuinely match what appears in the image.]
 
-CRITICAL: Extract real hex color codes that actually match the colors visible in the image. Look at the actual pixel colors, not generic color palettes. Provide 5-6 colors that are genuinely present in the image.`
+IMPORTANT: If you cannot accurately determine what's in the image, your description should state "This appears to be [basic description]" rather than inventing details.`
         },
         {
           role: "user",
-          content: `Please analyze the colors and describe this image: ${imageUrl}`
+          content: `Analyze this image: ${imageUrl}
+
+Please be 100% factual about what you actually see. Do not invent stories or make assumptions. Only describe the visible objects and colors you can directly observe.`
         }
       ],
       temperature: 0.1,
